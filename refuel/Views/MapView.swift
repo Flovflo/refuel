@@ -29,7 +29,7 @@ struct MapView: View {
                     UserAnnotation()
 
                     ForEach(viewModel.stations) { station in
-                        Annotation(station.city, coordinate: station.coordinate) {
+                        Annotation(station.city ?? "Station", coordinate: station.coordinate) {
                             Button {
                                 selectedStation = station
                             } label: {

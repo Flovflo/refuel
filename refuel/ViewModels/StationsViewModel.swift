@@ -66,10 +66,27 @@ final class StationsViewModel {
         }
 
         do {
-            let fetchedStations = try await dataService.fetchStations()
-            cachedStations = fetchedStations
             let resolvedLocation = await resolveUserLocation()
-            stations = sortStations(fetchedStations, with: resolvedLocation)
+            guard let resolvedLocation else {
+                throw FuelError.missingLocation
+            }
+            let fetchedStations = try await dataService.fetchStations(
+                latitude: resolvedLocation.coordinate.latitude,
+                longitude: resolvedLocation.coordinate.longitude,
+                radius: maxRadiusKm
+            )
+            cachedStations = fetchedStations
+            let fuelType = selectedFuelType
+            let radius = maxRadiusKm
+            let sortedStations = await Task.detached(priority: .userInitiated) {
+                StationsViewModel.processStations(
+                    fetchedStations,
+                    with: resolvedLocation,
+                    fuelType: fuelType,
+                    maxRadiusKm: radius
+                )
+            }.value
+            stations = sortedStations
             await loadStationsNearHome(using: fetchedStations)
             await loadStationsNearWork(using: fetchedStations)
             updateAdviceMessage()
@@ -106,9 +123,23 @@ final class StationsViewModel {
         do {
             let coordinate = try await locationManager.geocode(city: trimmed)
             let searchLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-            let fetchedStations = try await dataService.fetchStations()
+            let fetchedStations = try await dataService.fetchStations(
+                latitude: searchLocation.coordinate.latitude,
+                longitude: searchLocation.coordinate.longitude,
+                radius: maxRadiusKm
+            )
             cachedStations = fetchedStations
-            stations = sortStations(fetchedStations, with: searchLocation)
+            let fuelType = selectedFuelType
+            let radius = maxRadiusKm
+            let sortedStations = await Task.detached(priority: .userInitiated) {
+                StationsViewModel.processStations(
+                    fetchedStations,
+                    with: searchLocation,
+                    fuelType: fuelType,
+                    maxRadiusKm: radius
+                )
+            }.value
+            stations = sortedStations
             await loadStationsNearHome(using: fetchedStations)
             await loadStationsNearWork(using: fetchedStations)
             updateAdviceMessage()
@@ -154,8 +185,24 @@ final class StationsViewModel {
     }
 
     private func fetchStationsSorted(using location: CLLocation?) async throws -> [FuelStation] {
-        let fetchedStations = try await dataService.fetchStations()
-        let sorted = sortStations(fetchedStations, with: location)
+        guard let location else {
+            throw FuelError.missingLocation
+        }
+        let fetchedStations = try await dataService.fetchStations(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            radius: maxRadiusKm
+        )
+        let fuelType = selectedFuelType
+        let radius = maxRadiusKm
+        let sorted = await Task.detached(priority: .userInitiated) {
+            StationsViewModel.processStations(
+                fetchedStations,
+                with: location,
+                fuelType: fuelType,
+                maxRadiusKm: radius
+            )
+        }.value
         logger.info("fetchStationsSorted: result count \(sorted.count, privacy: .public)")
         return sorted
     }
@@ -163,17 +210,22 @@ final class StationsViewModel {
     /// Maximum search radius in kilometers
     private let maxRadiusKm: Double = 5.0
 
-    private func sortStations(_ stations: [FuelStation], with location: CLLocation?) -> [FuelStation] {
+    nonisolated static func processStations(
+        _ stations: [FuelStation],
+        with location: CLLocation?,
+        fuelType: FuelType,
+        maxRadiusKm: Double
+    ) -> [FuelStation] {
         guard let location else {
             // No location: return sorted by city name, limited to 50
-            logger.info("No location available, returning first 50 by city name")
             return Array(stations.sorted { lhs, rhs in
-                lhs.city.localizedCaseInsensitiveCompare(rhs.city) == .orderedAscending
+                let leftCity = lhs.city ?? ""
+                let rightCity = rhs.city ?? ""
+                return leftCity.localizedCaseInsensitiveCompare(rightCity) == .orderedAscending
             }.prefix(50))
         }
 
         let userCoordinate = location.coordinate
-        let fuelType = selectedFuelType
 
         // Calculate distance for all stations
         var allWithDistance = stations.map { station -> FuelStation in
@@ -196,7 +248,6 @@ final class StationsViewModel {
 
         // FALLBACK: If no stations within radius, take the closest 20 regardless of distance
         if nearbyStations.isEmpty {
-            logger.warning("No stations within \(self.maxRadiusKm, privacy: .public) km, showing closest 20")
             allWithDistance.sort { ($0.distanceKm ?? .greatestFiniteMagnitude) < ($1.distanceKm ?? .greatestFiniteMagnitude) }
             nearbyStations = Array(allWithDistance.prefix(20))
         }
@@ -208,7 +259,6 @@ final class StationsViewModel {
             return leftPrice < rightPrice
         }
 
-        logger.info("Filtered to \(nearbyStations.count, privacy: .public) stations (radius=\(self.maxRadiusKm, privacy: .public) km)")
         return nearbyStations
     }
 
@@ -235,7 +285,17 @@ final class StationsViewModel {
             return
         }
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        bestDealNearHome = sortStations(stations, with: location).first
+        let fuelType = selectedFuelType
+        let radius = maxRadiusKm
+        let sortedStations = await Task.detached(priority: .userInitiated) {
+            StationsViewModel.processStations(
+                stations,
+                with: location,
+                fuelType: fuelType,
+                maxRadiusKm: radius
+            )
+        }.value
+        bestDealNearHome = sortedStations.first
     }
 
     private func loadStationsNearWork(using stations: [FuelStation]) async {
@@ -244,7 +304,17 @@ final class StationsViewModel {
             return
         }
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        bestDealNearWork = sortStations(stations, with: location).first
+        let fuelType = selectedFuelType
+        let radius = maxRadiusKm
+        let sortedStations = await Task.detached(priority: .userInitiated) {
+            StationsViewModel.processStations(
+                stations,
+                with: location,
+                fuelType: fuelType,
+                maxRadiusKm: radius
+            )
+        }.value
+        bestDealNearWork = sortedStations.first
     }
 
     private func loadUserProfile() {

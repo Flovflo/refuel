@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+asyncpg
+alembic
+geoalchemy2
+requests
+apscheduler
+lxml
+pydantic-settings

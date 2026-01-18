@@ -26,42 +26,46 @@ final class ServicesTests: XCTestCase {
         XCTAssertEqual(coordinate.longitude, 2.3522, accuracy: 1.0)
     }
     
-    func testXMLParsing() async throws {
-        // Mock XML Data
-        let xmlString = """
-        <root>
-            <pdv id="123" latitude="4885660" longitude="235220" cp="75001">
-                <adresse>Rue de Rivoli</adresse>
-                <ville>Paris</ville>
-                <prix nom="Gazole" id="1" maj="2026-01-14T10:00:00" valeur="1.999"/>
-            </pdv>
-        </root>
+    func testJSONDecoding() throws {
+        let json = """
+        [
+          {
+            "id": "123456",
+            "address": null,
+            "city": null,
+            "cp": null,
+            "distance": 1.2,
+            "prices": [
+              { "fuel_type": "Gazole", "price": 1.7, "update_date": "2026-01-14T10:00:00" }
+            ]
+          }
+        ]
         """
-        
-        guard let data = xmlString.data(using: .utf8) else {
+
+        guard let data = json.data(using: .utf8) else {
             XCTFail("Failed to create Data")
             return
         }
-        
-        // We use the internal parser directly to test logic
-        let service = FuelDataService()
-        // Accessing internal/private components is hard in Swift external tests.
-        // We might need to expose the parser or make it internal and use @testable (which we do).
-        // Since PDVParser is inside FuelDataService.swift but outside the actor extension (if I put it there),
-        // let's check where I put it. I put it as a class at file scope.
-        
-        let parser = PDVParser(data: data)
-        let stations = try await parser.parse()
-        
+
+        let decoder = JSONDecoder()
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        let stations = try decoder.decode([FuelStation].self, from: data)
+
         XCTAssertEqual(stations.count, 1)
         let station = stations.first!
-        
-        XCTAssertEqual(station.id, "123")
-        XCTAssertEqual(station.city, "Paris")
-        // Check coordinate conversion
-        XCTAssertEqual(station.latitude, 48.85660, accuracy: 0.00001)
+
+        XCTAssertEqual(station.id, "123456")
+        XCTAssertNil(station.city)
+        XCTAssertNil(station.postalCode)
+        XCTAssertEqual(station.distanceKm ?? 0, 1.2, accuracy: 0.0001)
         XCTAssertEqual(station.prices.count, 1)
-        XCTAssertEqual(station.prices.first?.price, 1.999)
+        XCTAssertEqual(station.prices.first?.price, 1.7)
+        XCTAssertEqual(station.services, [])
+        XCTAssertFalse(station.isOpen24h)
     }
 
     func testRealNetworkFetch() async throws {
@@ -69,7 +73,11 @@ final class ServicesTests: XCTestCase {
         try XCTSkipUnless(shouldRun, "Set RUN_REAL_NETWORK_TESTS=1 to run real network fetch.")
 
         let service = FuelDataService()
-        let stations = try await service.fetchStations()
+        let stations = try await service.fetchStations(
+            latitude: 48.8566,
+            longitude: 2.3522,
+            radius: 5.0
+        )
         XCTAssertGreaterThan(stations.count, 0)
     }
 

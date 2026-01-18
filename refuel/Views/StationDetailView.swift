@@ -12,6 +12,9 @@ struct StationDetailView: View {
     let station: FuelStation
     
     var body: some View {
+        let cityName = station.city ?? "Unknown city"
+        let addressLine = station.address ?? "Unknown address"
+        let postalCode = station.postalCode
         ZStack {
             backgroundView
             ScrollView {
@@ -20,16 +23,18 @@ struct StationDetailView: View {
 
                     GlassCard {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text(station.city.capitalized)
+                            Text(cityName.capitalized)
                                 .font(.title)
                                 .bold()
 
-                            Text(station.address.capitalized)
+                            Text(addressLine.capitalized)
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
 
                             HStack(spacing: 12) {
-                                Label("CP \(station.postalCode)", systemImage: "mappin.and.ellipse")
+                                if let postalCode {
+                                    Label("CP \(postalCode)", systemImage: "mappin.and.ellipse")
+                                }
                                 if station.isOpen24h {
                                     Label("24/24", systemImage: "clock.fill")
                                         .foregroundStyle(.green)
@@ -93,7 +98,7 @@ struct StationDetailView: View {
                 .padding(.bottom, 24)
             }
         }
-        .navigationTitle(station.city.capitalized)
+        .navigationTitle(cityName.capitalized)
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -103,14 +108,14 @@ struct StationDetailView: View {
                 center: station.coordinate,
                 span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
             ))) {
-                Marker(station.city, coordinate: station.coordinate)
+                Marker(station.city ?? "Station", coordinate: station.coordinate)
             }
             .frame(height: 260)
             .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
 
             GlassCard {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(station.city.capitalized)
+                    Text((station.city ?? "Unknown city").capitalized)
                         .font(.headline)
                     if let distance = station.distanceKm {
                         Label(String(format: "%.1f km", distance), systemImage: "location.fill")

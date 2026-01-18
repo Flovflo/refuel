@@ -35,7 +35,8 @@ final class AdvisorService {
         if days <= 2 {
             if let station = cheapestStation {
                 let price = station.prices.first?.price ?? 0
-                return "⛽️ Time to refuel! Best price: \(station.city) at \(price)€/L"
+                let city = station.city ?? "Unknown city"
+                return "⛽️ Time to refuel! Best price: \(city) at \(price)€/L"
             }
             return "⛽️ Time to refuel soon!"
         } else if days <= 5 {

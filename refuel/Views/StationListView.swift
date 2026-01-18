@@ -55,9 +55,9 @@ struct StationListView: View {
                             ForEach(viewModel.stations) { station in
                                 NavigationLink(value: station) {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text(station.city.capitalized)
+                                        Text((station.city ?? "Unknown city").capitalized)
                                             .font(.headline)
-                                        Text(station.address.capitalized)
+                                        Text((station.address ?? "Unknown address").capitalized)
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                         if let price = viewModel.price(for: station) {
@@ -143,9 +143,9 @@ struct StationListView: View {
                 Text(title.uppercased())
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(station.city.capitalized)
+                Text((station.city ?? "Unknown city").capitalized)
                     .font(.headline)
-                Text(station.address.capitalized)
+                Text((station.address ?? "Unknown address").capitalized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -213,11 +213,11 @@ struct StationRow: View {
         GlassCard {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(station.city.capitalized)
+                    Text((station.city ?? "Unknown city").capitalized)
                         .font(.headline)
                         .foregroundStyle(.primary)
                     
-                    Text(station.address.capitalized)
+                    Text((station.address ?? "Unknown address").capitalized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     
