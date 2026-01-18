@@ -61,39 +61,35 @@ final class StationsViewModel {
         errorMessage = nil
         
         do {
-            // Fetch data (network call, already async)
+            // Fetch data from API
             let fetchedStations = try await dataService.fetchStations()
             cachedStations = fetchedStations
+            logger.info("Fetched \(fetchedStations.count) stations from API")
             
-            // Get location (async)
+            // Get home coordinates from profile
             let resolvedLocation = await resolveUserLocation()
             
-            // Heavy sorting on background thread to avoid UI freeze
-            let sortedStations = await Task.detached(priority: .userInitiated) { [selectedFuelType, maxRadiusKm] in
-                self.sortStationsBackground(fetchedStations, with: resolvedLocation, fuelType: selectedFuelType, radius: maxRadiusKm)
-            }.value
+            // Sort and filter stations (limited to 50, so fast enough on main thread)
+            stations = sortStations(fetchedStations, with: resolvedLocation)
+            logger.info("Showing \(self.stations.count) stations")
             
-            // Update UI on main thread
-            self.stations = sortedStations
-            self.logger.info("loadStations: showing \(sortedStations.count, privacy: .public) stations")
-            
-            // Load best deals (background)
+            // Load best deals near home/work
             await loadStationsNearHome(using: fetchedStations)
             await loadStationsNearWork(using: fetchedStations)
             updateAdviceMessage()
             
             state = .idle
-            logger.info("loadStations: end state=idle")
+            logger.info("loadStations: complete")
         } catch let error as FuelError {
             let message = StationsViewModelError.data(error).localizedDescription
             errorMessage = message
             state = .error(message)
-            logger.error("loadStations: data error \(error.localizedDescription, privacy: .public)")
+            logger.error("loadStations: data error \(error.localizedDescription)")
         } catch {
             let message = StationsViewModelError.unexpected(error).localizedDescription
             errorMessage = message
             state = .error(message)
-            logger.error("loadStations: unexpected error \(error.localizedDescription, privacy: .public)")
+            logger.error("loadStations: unexpected error \(error.localizedDescription)")
         }
     }
 
