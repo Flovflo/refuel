@@ -289,40 +289,63 @@ private func filterAndSortStations(
     fuelType: FuelType,
     radius: Double
 ) -> [FuelStation] {
-    let userCoordinate = location.coordinate
+    let userLat = location.coordinate.latitude
+    let userLon = location.coordinate.longitude
+    
+    // OPTIMIZATION: Bounding Box Filter
+    // 1 degree lat ~= 111km. 0.1 degree ~= 11km.
+    // Filter out stations clearly outside a generous 10-15km box BEFORE heavy distance calc.
+    let latDelta = 0.15 
+    let lonDelta = 0.15
+    
+    // First pass: Rapid reject based on simple float math & Fuel Type
+    // This reduces the set from ~10,000 to ~200-500
+    let candidates = stations.filter { station in
+         // 1. Check Fuel Type (fastest check)
+         guard station.prices.contains(where: { $0.fuelType == fuelType }) else { return false }
+         
+         // 2. Bounding Box (fast float math)
+         let dLat = abs(station.latitude - userLat)
+         let dLon = abs(station.longitude - userLon)
+         return dLat < latDelta && dLon < lonDelta
+    }
 
-    // Calculate distance for all stations
-    var allWithDistance = stations.map { station -> FuelStation in
+    // Second pass: Precise distance calculation on the reduced set
+    var validStations = candidates.compactMap { station -> FuelStation? in
         var mutable = station
-        let stationCoordinate = CLLocationCoordinate2D(
-            latitude: station.latitude,
-            longitude: station.longitude
-        )
-        mutable.distanceKm = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
-        return mutable
+        let stationLocation = CLLocation(latitude: mutable.latitude, longitude: mutable.longitude)
+        // Heavy calculation happens only here
+        let dist = location.distance(from: stationLocation) / 1000.0 // Convert m to km
+        
+        if dist <= radius {
+            mutable.distanceKm = dist
+            return mutable
+        }
+        return nil
     }
 
-    // Filter to only stations that have the selected fuel type
-    allWithDistance = allWithDistance.filter { station in
-        station.prices.contains { $0.fuelType == fuelType }
+    // Note: If no stations found within 5km, we might want to fallback.
+    // But since we pre-filtered, looking for "closest 20 in France" requires scanning the whole 10k list again.
+    // If empty, let's fast fallback to the original list's closest stations (expensive, but rare).
+    if validStations.isEmpty {
+         // Fallback: Scan everything but just for distance
+         // This is the "slow path" but only happens if the user is in a desert
+         var all = stations.map { s -> FuelStation in
+             var m = s
+             let sLoc = CLLocation(latitude: s.latitude, longitude: s.longitude)
+             m.distanceKm = location.distance(from: sLoc) / 1000.0
+             return m
+         }
+         all.sort { ($0.distanceKm ?? 9999) < ($1.distanceKm ?? 9999) }
+         validStations = Array(all.prefix(20))
     }
 
-    // Filter by radius
-    var nearbyStations = allWithDistance.filter { ($0.distanceKm ?? .greatestFiniteMagnitude) <= radius }
-
-    // FALLBACK: If no stations within radius, take the closest 20 regardless of distance
-    if nearbyStations.isEmpty {
-        // Sort full list by distance
-        allWithDistance.sort { ($0.distanceKm ?? .greatestFiniteMagnitude) < ($1.distanceKm ?? .greatestFiniteMagnitude) }
-        nearbyStations = Array(allWithDistance.prefix(20))
-    }
-
-    // Sort by cheapest price for the selected fuel type
-    nearbyStations.sort { lhs, rhs in
-        let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
-        let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+    // Sort by cheapest price
+    validStations.sort { lhs, rhs in
+        let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? 999
+        let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? 999
         return leftPrice < rightPrice
     }
 
-    return nearbyStations
+    return validStations
 }
