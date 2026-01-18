@@ -73,6 +73,7 @@ struct StationListView: View {
                                             price: viewModel.price(for: station)
                                         )
                                     }
+                                    .contentShape(Rectangle())
                                     .buttonStyle(.plain)
                                 }
                             }

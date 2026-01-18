@@ -1,0 +1,219 @@
+{
+  "" : {
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuel-primary.dia",
+    "emit-module-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuel-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuel-primary-emit-module.dia",
+    "pch" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuel-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuel-primary.swiftdeps"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Components/GlassCard.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/GlassCard~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Components/PriceBadge.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PriceBadge~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/ContentView.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Models/FuelPrice.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelPrice~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Models/FuelStation.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelStation~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Models/FuelType.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelType~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Models/RefillEntry.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/RefillEntry~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Models/StationPriceHistory.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationPriceHistory~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Models/UserProfile.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/UserProfile~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Services/AdvisorService.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/AdvisorService~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Services/FuelDataService.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/FuelDataService~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Services/LocationManager.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/LocationManager~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Services/PersistenceManager.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/PersistenceManager~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Utilities/Logger+Refuel.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/Logger+Refuel~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/ViewModels/StationsViewModel.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationsViewModel~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Views/MapView.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/MapView~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Views/Onboarding/OnboardingView.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/OnboardingView~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Views/StationDetailView.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationDetailView~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/Views/StationListView.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/StationListView~partial.swiftmodule"
+  },
+  "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/refuel/refuelApp.swift" : {
+    "const-values" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.swiftconstvalues",
+    "dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.d",
+    "diagnostics" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.dia",
+    "index-unit-output-path" : "/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.o",
+    "llvm-bc" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.bc",
+    "object" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.o",
+    "swift-dependencies" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp.swiftdeps",
+    "swiftmodule" : "/Users/florian/Documents/Projet/REFUEL/REFUEL/refuel/build/Build/Intermediates.noindex/refuel.build/Debug-iphonesimulator/refuel.build/Objects-normal/arm64/refuelApp~partial.swiftmodule"
+  }
+}

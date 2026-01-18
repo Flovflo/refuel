@@ -155,7 +155,7 @@ final class StationsViewModel {
     }
 
     /// Maximum search radius in kilometers
-    private let maxRadiusKm: Double = 30.0
+    private let maxRadiusKm: Double = 5.0
 
     private func sortStations(_ stations: [FuelStation], with location: CLLocation?) -> [FuelStation] {
         guard let location else {
