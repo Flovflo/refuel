@@ -77,8 +77,21 @@ final class StationsViewModel {
         do {
             let fetchedStations = try await dataService.fetchStations()
             cachedStations = fetchedStations
-            let resolvedLocation = await resolveUserLocation()
-            stations = sortStations(fetchedStations, with: resolvedLocation)
+            
+            guard let resolvedLocation = await resolveUserLocation() else {
+                 // Should not happen with fallback, but good safety
+                 stations = []
+                 logger.warning("No location resolved even with fallback")
+                 return
+            }
+            
+            // Offload heavy sorting to background task
+            let type = selectedFuelType
+            let radius = maxRadiusKm
+            stations = await Task.detached {
+                return filterAndSortStations(stations: fetchedStations, location: resolvedLocation, fuelType: type, radius: radius)
+            }.value
+            
             await loadStationsNearHome(using: fetchedStations)
             await loadStationsNearWork(using: fetchedStations)
             updateAdviceMessage()
@@ -110,8 +123,15 @@ final class StationsViewModel {
             let coordinate = try await locationManager.geocode(city: trimmed)
             let searchLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
             
-            // Filter using the search location
-            stations = sortStations(cachedStations, with: searchLocation)
+            // Filter using the search location (offloaded)
+            let type = selectedFuelType
+            let radius = maxRadiusKm
+            let localCached = cachedStations
+            
+            stations = await Task.detached {
+                 return filterAndSortStations(stations: localCached, location: searchLocation, fuelType: type, radius: radius)
+            }.value
+            
             state = .idle
         } catch {
             logger.error("Search failed: \(error.localizedDescription)")
@@ -121,11 +141,11 @@ final class StationsViewModel {
     }
 
     private func resolveUserLocation() async -> CLLocation? {
-        logger.info("resolveUserLocation: strictly using saved coordinates")
+        logger.info("resolveUserLocation: strictly using saved coordinates with fallback")
         
-        // STRICT PRIORITY: Home -> Work -> Nil. NO GPS.
+        // STRICT PRIORITY: Home -> Work -> Paris Default. NO GPS.
         if let homeCoordinate = userProfile?.homeCoordinate {
-            logger.info("resolveUserLocation: using home coordinates (lat: \(homeCoordinate.latitude), lon: \(homeCoordinate.longitude))")
+            logger.info("resolveUserLocation: using home coordinates")
             return CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
         }
         
@@ -134,69 +154,24 @@ final class StationsViewModel {
             return CLLocation(latitude: workCoordinate.latitude, longitude: workCoordinate.longitude)
         }
         
-        // User requested NO GPS usage for now.
-        logger.warning("resolveUserLocation: no home/work coordinates found. Returning nil.")
-        return nil
+        // FALLBACK: User has no home/work set yet, but we must show something.
+        // Default to Paris center to ensure data appears.
+        logger.warning("resolveUserLocation: No Home/Work set. Defaulting to Paris.")
+        return CLLocation(latitude: 48.8566, longitude: 2.3522)
     }
 
     private func fetchStationsSorted(using location: CLLocation?) async throws -> [FuelStation] {
-        let fetchedStations = try await dataService.fetchStations()
-        let sorted = sortStations(fetchedStations, with: location)
-        logger.info("fetchStationsSorted: result count \(sorted.count, privacy: .public)")
-        return sorted
+         guard let location = location else { return cachedStations }
+         let type = selectedFuelType
+         let radius = maxRadiusKm
+         let currentStations = cachedStations
+         return await Task.detached {
+             return filterAndSortStations(stations: currentStations, location: location, fuelType: type, radius: radius)
+         }.value
     }
 
     /// Maximum search radius in kilometers
     private let maxRadiusKm: Double = 5.0
-
-    private func sortStations(_ stations: [FuelStation], with location: CLLocation?) -> [FuelStation] {
-        guard let location else {
-            // No location: return sorted by city name, limited to 50
-            logger.info("No location available, returning first 50 by city name")
-            return Array(stations.sorted { lhs, rhs in
-                lhs.city.localizedCaseInsensitiveCompare(rhs.city) == .orderedAscending
-            }.prefix(50))
-        }
-
-        let userCoordinate = location.coordinate
-        let fuelType = selectedFuelType
-
-        // Calculate distance for all stations
-        var allWithDistance = stations.map { station -> FuelStation in
-            var mutable = station
-            let stationCoordinate = CLLocationCoordinate2D(
-                latitude: station.latitude,
-                longitude: station.longitude
-            )
-            mutable.distanceKm = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
-            return mutable
-        }
-
-        // Filter to only stations that have the selected fuel type
-        allWithDistance = allWithDistance.filter { station in
-            station.prices.contains { $0.fuelType == fuelType }
-        }
-
-        // Filter by radius
-        var nearbyStations = allWithDistance.filter { ($0.distanceKm ?? .greatestFiniteMagnitude) <= maxRadiusKm }
-
-        // FALLBACK: If no stations within radius, take the closest 20 regardless of distance
-        if nearbyStations.isEmpty {
-            logger.warning("No stations within \(self.maxRadiusKm, privacy: .public) km, showing closest 20")
-            allWithDistance.sort { ($0.distanceKm ?? .greatestFiniteMagnitude) < ($1.distanceKm ?? .greatestFiniteMagnitude) }
-            nearbyStations = Array(allWithDistance.prefix(20))
-        }
-
-        // Sort by cheapest price for the selected fuel type
-        nearbyStations.sort { lhs, rhs in
-            let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
-            let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
-            return leftPrice < rightPrice
-        }
-
-        logger.info("Filtered to \(nearbyStations.count, privacy: .public) stations (radius=\(self.maxRadiusKm, privacy: .public) km)")
-        return nearbyStations
-    }
 
     func price(for station: FuelStation, fallbackToCheapest: Bool = false) -> Double? {
         if let match = station.prices.first(where: { $0.fuelType == selectedFuelType }) {
@@ -221,7 +196,13 @@ final class StationsViewModel {
             return
         }
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        bestDealNearHome = sortStations(stations, with: location).first
+        let type = selectedFuelType
+        let radius = maxRadiusKm
+        
+        let sorted = await Task.detached {
+            return filterAndSortStations(stations: stations, location: location, fuelType: type, radius: radius)
+        }.value
+        bestDealNearHome = sorted.first
     }
 
     private func loadStationsNearWork(using stations: [FuelStation]) async {
@@ -230,14 +211,17 @@ final class StationsViewModel {
             return
         }
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        bestDealNearWork = sortStations(stations, with: location).first
+        let type = selectedFuelType
+        let radius = maxRadiusKm
+        
+        let sorted = await Task.detached {
+            return filterAndSortStations(stations: stations, location: location, fuelType: type, radius: radius)
+        }.value
+        bestDealNearWork = sorted.first
     }
 
     private func loadUserProfile() {
-        userProfile = PersistenceManager.shared.fetchUserProfile()
-        if let profile = userProfile {
-            selectedFuelType = profile.fuelType
-        }
+        // Keep empty/unused as we load async in loadStations
     }
 
     private func updateAdviceMessage() {
@@ -297,3 +281,48 @@ extension StationsViewModel {
     }
 }
 #endif
+
+// Helper outside actor
+private func filterAndSortStations(
+    stations: [FuelStation],
+    location: CLLocation,
+    fuelType: FuelType,
+    radius: Double
+) -> [FuelStation] {
+    let userCoordinate = location.coordinate
+
+    // Calculate distance for all stations
+    var allWithDistance = stations.map { station -> FuelStation in
+        var mutable = station
+        let stationCoordinate = CLLocationCoordinate2D(
+            latitude: station.latitude,
+            longitude: station.longitude
+        )
+        mutable.distanceKm = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
+        return mutable
+    }
+
+    // Filter to only stations that have the selected fuel type
+    allWithDistance = allWithDistance.filter { station in
+        station.prices.contains { $0.fuelType == fuelType }
+    }
+
+    // Filter by radius
+    var nearbyStations = allWithDistance.filter { ($0.distanceKm ?? .greatestFiniteMagnitude) <= radius }
+
+    // FALLBACK: If no stations within radius, take the closest 20 regardless of distance
+    if nearbyStations.isEmpty {
+        // Sort full list by distance
+        allWithDistance.sort { ($0.distanceKm ?? .greatestFiniteMagnitude) < ($1.distanceKm ?? .greatestFiniteMagnitude) }
+        nearbyStations = Array(allWithDistance.prefix(20))
+    }
+
+    // Sort by cheapest price for the selected fuel type
+    nearbyStations.sort { lhs, rhs in
+        let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+        let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+        return leftPrice < rightPrice
+    }
+
+    return nearbyStations
+}
