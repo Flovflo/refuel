@@ -59,29 +59,40 @@ final class StationsViewModel {
         logger.info("loadStations: start")
         state = .loading
         errorMessage = nil
-        var finalState: ViewState = .idle
-        defer {
-            state = finalState
-            logger.info("loadStations: end state=\(String(describing: finalState), privacy: .public)")
-        }
-
+        
         do {
+            // Fetch data (network call, already async)
             let fetchedStations = try await dataService.fetchStations()
             cachedStations = fetchedStations
+            
+            // Get location (async)
             let resolvedLocation = await resolveUserLocation()
-            stations = sortStations(fetchedStations, with: resolvedLocation)
+            
+            // Heavy sorting on background thread to avoid UI freeze
+            let sortedStations = await Task.detached(priority: .userInitiated) { [selectedFuelType, maxRadiusKm] in
+                self.sortStationsBackground(fetchedStations, with: resolvedLocation, fuelType: selectedFuelType, radius: maxRadiusKm)
+            }.value
+            
+            // Update UI on main thread
+            self.stations = sortedStations
+            self.logger.info("loadStations: showing \(sortedStations.count, privacy: .public) stations")
+            
+            // Load best deals (background)
             await loadStationsNearHome(using: fetchedStations)
             await loadStationsNearWork(using: fetchedStations)
             updateAdviceMessage()
+            
+            state = .idle
+            logger.info("loadStations: end state=idle")
         } catch let error as FuelError {
             let message = StationsViewModelError.data(error).localizedDescription
             errorMessage = message
-            finalState = .error(message)
+            state = .error(message)
             logger.error("loadStations: data error \(error.localizedDescription, privacy: .public)")
         } catch {
             let message = StationsViewModelError.unexpected(error).localizedDescription
             errorMessage = message
-            finalState = .error(message)
+            state = .error(message)
             logger.error("loadStations: unexpected error \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -209,6 +220,57 @@ final class StationsViewModel {
         }
 
         logger.info("Filtered to \(nearbyStations.count, privacy: .public) stations (radius=\(self.maxRadiusKm, privacy: .public) km)")
+        return nearbyStations
+    }
+
+    /// Background-safe version of sortStations - can run off MainActor
+    nonisolated private func sortStationsBackground(
+        _ stations: [FuelStation],
+        with location: CLLocation?,
+        fuelType: FuelType,
+        radius: Double
+    ) -> [FuelStation] {
+        guard let location else {
+            // No location: return sorted by city name, limited to 50
+            return Array(stations.sorted { lhs, rhs in
+                lhs.city.localizedCaseInsensitiveCompare(rhs.city) == .orderedAscending
+            }.prefix(50))
+        }
+
+        let userCoordinate = location.coordinate
+
+        // Calculate distance for all stations
+        var allWithDistance = stations.map { station -> FuelStation in
+            var mutable = station
+            let stationCoordinate = CLLocationCoordinate2D(
+                latitude: station.latitude,
+                longitude: station.longitude
+            )
+            mutable.distanceKm = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
+            return mutable
+        }
+
+        // Filter to only stations that have the selected fuel type
+        allWithDistance = allWithDistance.filter { station in
+            station.prices.contains { $0.fuelType == fuelType }
+        }
+
+        // Filter by radius
+        var nearbyStations = allWithDistance.filter { ($0.distanceKm ?? .greatestFiniteMagnitude) <= radius }
+
+        // FALLBACK: If no stations within radius, take the closest 20 regardless of distance
+        if nearbyStations.isEmpty {
+            allWithDistance.sort { ($0.distanceKm ?? .greatestFiniteMagnitude) < ($1.distanceKm ?? .greatestFiniteMagnitude) }
+            nearbyStations = Array(allWithDistance.prefix(20))
+        }
+
+        // Sort by cheapest price for the selected fuel type
+        nearbyStations.sort { lhs, rhs in
+            let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+            let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+            return leftPrice < rightPrice
+        }
+
         return nearbyStations
     }
 
