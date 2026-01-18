@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import OSLog
 
 @Observable
 class LocationManager: NSObject, CLLocationManagerDelegate {
@@ -15,6 +16,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         case authorizationRestricted
         case invalidCity
         case noGeocodingResult
+        case requestInProgress
 
         var errorDescription: String? {
             switch self {
@@ -26,6 +28,8 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
                 return "Enter a valid city name."
             case .noGeocodingResult:
                 return "No results found for that city."
+            case .requestInProgress:
+                return "Location request already in progress."
             }
         }
     }
@@ -35,6 +39,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     var errorMessage: String?
     
     private let manager = CLLocationManager()
+    private let logger = Logger.location
     
     var lastKnownLocation: CLLocation? { location }
     private var continuation: CheckedContinuation<CLLocation, Error>?
@@ -49,12 +54,14 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     }
     
     func getCurrentLocation() async throws -> CLLocation {
-        // Build a continuation
-        // If we have a recent location (e.g. < 1 min old), return it?
-        // For simplicity, request new one.
-        
+        if continuation != nil {
+            logger.error("Location request already in progress")
+            throw LocationError.requestInProgress
+        }
+
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
+            logger.info("Requesting location...")
             switch manager.authorizationStatus {
             case .authorizedAlways, .authorizedWhenInUse:
                 isAuthorized = true
@@ -64,16 +71,13 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
                 manager.requestWhenInUseAuthorization()
             case .denied:
                 isAuthorized = false
-                continuation.resume(throwing: LocationError.authorizationDenied)
-                self.continuation = nil
+                finishContinuation(with: .failure(LocationError.authorizationDenied))
             case .restricted:
                 isAuthorized = false
-                continuation.resume(throwing: LocationError.authorizationRestricted)
-                self.continuation = nil
+                finishContinuation(with: .failure(LocationError.authorizationRestricted))
             @unknown default:
                 isAuthorized = false
-                continuation.resume(throwing: LocationError.authorizationDenied)
-                self.continuation = nil
+                finishContinuation(with: .failure(LocationError.authorizationDenied))
             }
         }
     }
@@ -108,21 +112,14 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let newLocation = locations.last else { return }
         self.location = newLocation
-        
-        // Fulfill continuation if pending
-        if let output = continuation {
-            output.resume(returning: newLocation)
-            continuation = nil
-        }
+        logger.info("Location received: \(newLocation, privacy: .public)")
+        finishContinuation(with: .success(newLocation))
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         errorMessage = error.localizedDescription
-        
-        if let output = continuation {
-            output.resume(throwing: error)
-            continuation = nil
-        }
+        logger.error("Location error: \(error.localizedDescription, privacy: .public)")
+        finishContinuation(with: .failure(error))
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -135,21 +132,28 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         case .denied:
             isAuthorized = false
             errorMessage = LocationError.authorizationDenied.localizedDescription
-            if let output = continuation {
-                output.resume(throwing: LocationError.authorizationDenied)
-                continuation = nil
-            }
+            logger.error("Location authorization denied")
+            finishContinuation(with: .failure(LocationError.authorizationDenied))
         case .restricted:
             isAuthorized = false
             errorMessage = LocationError.authorizationRestricted.localizedDescription
-            if let output = continuation {
-                output.resume(throwing: LocationError.authorizationRestricted)
-                continuation = nil
-            }
+            logger.error("Location authorization restricted")
+            finishContinuation(with: .failure(LocationError.authorizationRestricted))
         case .notDetermined:
             isAuthorized = false
         @unknown default:
             isAuthorized = false
+        }
+    }
+
+    private func finishContinuation(with result: Result<CLLocation, Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        switch result {
+        case .success(let location):
+            continuation.resume(returning: location)
+        case .failure(let error):
+            continuation.resume(throwing: error)
         }
     }
 }

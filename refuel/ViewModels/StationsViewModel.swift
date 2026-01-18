@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Observation
+import OSLog
 
 @Observable
 @MainActor
@@ -35,6 +36,7 @@ final class StationsViewModel {
 
     private let dataService: FuelDataService
     private let locationManager: LocationManager
+    private let logger = Logger.refuel
 
     init(
         dataService: FuelDataService? = nil,
@@ -45,48 +47,63 @@ final class StationsViewModel {
     }
 
     func loadStations() async {
+        logger.info("loadStations: start")
         state = .loading
         errorMessage = nil
+        var finalState: ViewState = .idle
+        defer {
+            state = finalState
+            logger.info("loadStations: end state=\(String(describing: finalState), privacy: .public)")
+        }
 
         do {
             let fetchedStations = try await fetchStationsSorted(using: await resolveUserLocation())
             stations = fetchedStations
-            state = .idle
         } catch let error as FuelError {
             let message = StationsViewModelError.data(error).localizedDescription
             errorMessage = message
-            state = .error(message)
+            finalState = .error(message)
+            logger.error("loadStations: data error \(error.localizedDescription, privacy: .public)")
         } catch {
             let message = StationsViewModelError.unexpected(error).localizedDescription
             errorMessage = message
-            state = .error(message)
+            finalState = .error(message)
+            logger.error("loadStations: unexpected error \(error.localizedDescription, privacy: .public)")
         }
     }
 
     func search(city: String) async {
         let trimmed = city.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
+            logger.info("search: empty city, delegating to loadStations")
             await loadStations()
             return
         }
 
+        logger.info("search: start city=\(trimmed, privacy: .public)")
         state = .loading
         errorMessage = nil
+        var finalState: ViewState = .idle
+        defer {
+            state = finalState
+            logger.info("search: end state=\(String(describing: finalState), privacy: .public)")
+        }
 
         do {
             let coordinate = try await locationManager.geocode(city: trimmed)
             let searchLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
             let fetchedStations = try await fetchStationsSorted(using: searchLocation)
             stations = fetchedStations
-            state = .idle
         } catch let error as FuelError {
             let message = StationsViewModelError.data(error).localizedDescription
             errorMessage = message
-            state = .error(message)
+            finalState = .error(message)
+            logger.error("search: data error \(error.localizedDescription, privacy: .public)")
         } catch {
             let message = StationsViewModelError.location(error).localizedDescription
             errorMessage = message
-            state = .error(message)
+            finalState = .error(message)
+            logger.error("search: location error \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -102,34 +119,52 @@ final class StationsViewModel {
 
     private func fetchStationsSorted(using location: CLLocation?) async throws -> [FuelStation] {
         let fetchedStations = try await dataService.fetchStations()
-        return sortStations(fetchedStations, with: location)
+        let sorted = sortStations(fetchedStations, with: location)
+        logger.info("fetchStationsSorted: result count \(sorted.count, privacy: .public)")
+        return sorted
     }
+
+    /// Maximum search radius in kilometers
+    private let maxRadiusKm: Double = 30.0
 
     private func sortStations(_ stations: [FuelStation], with location: CLLocation?) -> [FuelStation] {
         guard let location else {
-            return stations.sorted { lhs, rhs in
+            // No location: return sorted by city name, limited to 50
+            return Array(stations.sorted { lhs, rhs in
                 lhs.city.localizedCaseInsensitiveCompare(rhs.city) == .orderedAscending
-            }
+            }.prefix(50))
         }
 
         let userCoordinate = location.coordinate
-        var updated = stations.map { station -> FuelStation in
+        let fuelType = selectedFuelType
+
+        // 1. Calculate distance and filter by radius
+        var nearbyStations = stations.compactMap { station -> FuelStation? in
             var mutable = station
             let stationCoordinate = CLLocationCoordinate2D(
                 latitude: station.latitude,
                 longitude: station.longitude
             )
-            mutable.distanceKm = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
+            let distance = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
+            guard distance <= maxRadiusKm else { return nil }
+            mutable.distanceKm = distance
             return mutable
         }
 
-        updated.sort { lhs, rhs in
-            let leftDistance = lhs.distanceKm ?? .greatestFiniteMagnitude
-            let rightDistance = rhs.distanceKm ?? .greatestFiniteMagnitude
-            return leftDistance < rightDistance
+        // 2. Filter to only stations that have the selected fuel type
+        nearbyStations = nearbyStations.filter { station in
+            station.prices.contains { $0.fuelType == fuelType }
         }
 
-        return updated
+        // 3. Sort by cheapest price for the selected fuel type
+        nearbyStations.sort { lhs, rhs in
+            let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+            let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+            return leftPrice < rightPrice
+        }
+
+        logger.info("Filtered to \(nearbyStations.count, privacy: .public) stations within \(self.maxRadiusKm, privacy: .public) km")
+        return nearbyStations
     }
 
     func price(for station: FuelStation, fallbackToCheapest: Bool = false) -> Double? {

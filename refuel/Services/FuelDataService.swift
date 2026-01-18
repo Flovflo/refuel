@@ -7,6 +7,7 @@
 
 import Foundation
 import Compression
+import OSLog
 
 enum FuelError: LocalizedError {
     case invalidURL
@@ -32,14 +33,20 @@ actor FuelDataService {
 
         let data: Data
         do {
+            Logger.network.info("Downloading URL: \(url.absoluteString, privacy: .public)")
             (data, _) = try await URLSession.shared.data(from: url)
+            Logger.network.info("Download complete, size: \(data.count, privacy: .public) bytes")
         } catch {
             throw FuelError.networkError(error)
         }
 
         let xmlData = try await decodeXMLDataIfNeeded(from: data)
+        Logger.network.info("Parsing XML...")
         let stations = try await parseXML(data: xmlData)
-        await PersistenceManager.shared.recordPriceHistory(for: stations)
+        Logger.network.info("Fetch complete, found \(stations.count, privacy: .public) stations")
+        Task.detached(priority: .background) {
+            await PersistenceManager.shared.recordPriceHistory(for: stations)
+        }
         return stations
     }
     
@@ -54,6 +61,7 @@ actor FuelDataService {
     private func decodeXMLDataIfNeeded(from data: Data) async throws -> Data {
         guard data.isZIP else { return data }
 
+        Logger.network.info("Unzipping...")
         let task = Task.detached(priority: .utility) {
             try unzipXMLData(from: data)
         }
