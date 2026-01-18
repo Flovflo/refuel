@@ -54,78 +54,58 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     }
     
     func getCurrentLocation() async throws -> CLLocation {
-        logger.info("getCurrentLocation: start")
+        logger.info("getCurrentLocation: entering function")
         
-        // Cancel any stale request
+        // If we already have a recent location, return it immediately
+        if let existing = location {
+            logger.info("Returning cached location")
+            return existing
+        }
+        
+        // Cancel any stale continuation
         if continuation != nil {
-            logger.warning("Clearing stale location continuation")
-            finishContinuation(with: .failure(LocationError.requestInProgress))
+            logger.warning("Clearing stale continuation")
+            let oldContinuation = continuation
+            continuation = nil
+            oldContinuation?.resume(throwing: LocationError.requestInProgress)
         }
         
-        // Create a timeout task
-        let timeoutTask = Task {
-            try await Task.sleep(for: .seconds(5))
-            return true
-        }
+        // Check authorization first
+        let status = manager.authorizationStatus
+        logger.info("Authorization status: \(String(describing: status), privacy: .public)")
         
-        // Start location request on MainActor
-        let locationTask = Task { @MainActor in
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CLLocation, Error>) in
-                self.continuation = continuation
-                self.logger.info("Requesting location...")
-                
-                switch self.manager.authorizationStatus {
-                case .authorizedAlways, .authorizedWhenInUse:
-                    self.isAuthorized = true
-                    self.manager.requestLocation()
-                case .notDetermined:
-                    self.isAuthorized = false
-                    // Request authorization - continuation will be resumed in delegate
-                    self.manager.requestWhenInUseAuthorization()
-                case .denied:
-                    self.isAuthorized = false
-                    self.finishContinuation(with: .failure(LocationError.authorizationDenied))
-                case .restricted:
-                    self.isAuthorized = false
-                    self.finishContinuation(with: .failure(LocationError.authorizationRestricted))
-                @unknown default:
-                    self.isAuthorized = false
-                    self.finishContinuation(with: .failure(LocationError.authorizationDenied))
-                }
+        switch status {
+        case .denied:
+            throw LocationError.authorizationDenied
+        case .restricted:
+            throw LocationError.authorizationRestricted
+        case .notDetermined:
+            // Request authorization - this will show the dialog
+            manager.requestWhenInUseAuthorization()
+            // Wait a bit for user to respond, then check again
+            try await Task.sleep(for: .milliseconds(500))
+            if manager.authorizationStatus != .authorizedWhenInUse && 
+               manager.authorizationStatus != .authorizedAlways {
+                throw LocationError.authorizationDenied
             }
+        default:
+            break
         }
         
-        // Race: location vs timeout
-        do {
-            // Try to get location first
-            for try await _ in AsyncStream<Bool> { continuation in
-                Task {
-                    do {
-                        let result = try await locationTask.value
-                        timeoutTask.cancel()
-                        continuation.yield(true)
-                        continuation.finish()
-                    } catch {
-                        continuation.finish()
-                    }
-                }
-                Task {
-                    if (try? await timeoutTask.value) == true {
-                        locationTask.cancel()
-                        self.finishContinuation(with: .failure(LocationError.authorizationDenied))
-                        continuation.yield(false)
-                        continuation.finish()
-                    }
-                }
-            } {
-                break
-            }
+        isAuthorized = true
+        logger.info("Requesting single location update...")
+        
+        // Use a simple continuation without nested Tasks
+        return try await withCheckedThrowingContinuation { cont in
+            self.continuation = cont
+            self.manager.requestLocation()
             
-            return try await locationTask.value
-        } catch {
-            timeoutTask.cancel()
-            logger.error("getCurrentLocation failed: \(error.localizedDescription, privacy: .public)")
-            throw error
+            // Set up a timeout using DispatchQueue (not Task!)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+                guard let self = self, self.continuation != nil else { return }
+                self.logger.warning("Location request timed out")
+                self.finishContinuation(with: .failure(LocationError.authorizationDenied))
+            }
         }
     }
 
