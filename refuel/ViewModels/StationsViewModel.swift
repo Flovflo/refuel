@@ -271,7 +271,8 @@ final class StationsViewModel {
             return leftPrice < rightPrice
         }
 
-        return nearbyStations
+        // Limit to max 50 stations to prevent UI issues
+        return Array(nearbyStations.prefix(50))
     }
 
     func price(for station: FuelStation, fallbackToCheapest: Bool = false) -> Double? {
