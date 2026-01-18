@@ -126,23 +126,29 @@ final class StationsViewModel {
     }
 
     private func resolveUserLocation() async -> CLLocation? {
-        logger.info("resolveUserLocation: attempting GPS")
+        logger.info("resolveUserLocation: start")
+        
+        // PRIORITY 1: Use saved home coordinates (instant, no network/GPS needed)
+        if let homeCoordinate = userProfile?.homeCoordinate {
+            logger.info("resolveUserLocation: using home coordinates (lat: \(homeCoordinate.latitude), lon: \(homeCoordinate.longitude))")
+            return CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
+        }
+        
+        // PRIORITY 2: Use cached GPS location if available
+        if let cached = locationManager.lastKnownLocation {
+            logger.info("resolveUserLocation: using cached GPS location")
+            return cached
+        }
+        
+        // PRIORITY 3: Try to get fresh GPS (with 2s timeout built into LocationManager)
+        logger.info("resolveUserLocation: attempting fresh GPS")
         do {
             let loc = try await locationManager.getCurrentLocation()
             logger.info("resolveUserLocation: GPS success")
             return loc
         } catch {
-            logger.warning("resolveUserLocation: GPS failed, using fallback. Error: \(error.localizedDescription, privacy: .public)")
-            errorMessage = StationsViewModelError.location(error).localizedDescription
-            if let homeCoordinate = userProfile?.homeCoordinate {
-                logger.info("resolveUserLocation: using home coordinates")
-                return CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
-            }
-            if let last = locationManager.lastKnownLocation {
-                logger.info("resolveUserLocation: using last known location")
-                return last
-            }
-            logger.warning("resolveUserLocation: no fallback available")
+            logger.warning("resolveUserLocation: GPS failed: \(error.localizedDescription, privacy: .public)")
+            // No location available at all
             return nil
         }
     }
