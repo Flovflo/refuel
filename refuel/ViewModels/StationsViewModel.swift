@@ -347,5 +347,5 @@ private func filterAndSortStations(
         return leftPrice < rightPrice
     }
 
-    return validStations
+    return Array(validStations.prefix(30))
 }
