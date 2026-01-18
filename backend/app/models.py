@@ -46,6 +46,11 @@ class Price(Base):
 
 class PriceHistory(Base):
     __tablename__ = "price_history"
+    __table_args__ = (
+        UniqueConstraint(
+            "station_id", "fuel_type", "update_date", name="uq_price_history_entry"
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     station_id = Column(String, ForeignKey("fuel_stations.id"), nullable=False)
