@@ -17,7 +17,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         case invalidCity
         case noGeocodingResult
         case requestInProgress
-        case timeout
 
         var errorDescription: String? {
             switch self {
@@ -31,8 +30,6 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
                 return "No results found for that city."
             case .requestInProgress:
                 return "Location request already in progress."
-            case .timeout:
-                return "Location request timed out."
             }
         }
     }
@@ -42,51 +39,72 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     var errorMessage: String?
     
     private let manager = CLLocationManager()
+    private let logger = Logger.location
     
+    var lastKnownLocation: CLLocation? { location }
     private var continuation: CheckedContinuation<CLLocation, Error>?
     
     override init() {
         super.init()
         manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters // Enough for gas stations
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        if manager.authorizationStatus == .notDetermined {
+            manager.requestWhenInUseAuthorization()
+        }
     }
     
     func getCurrentLocation() async throws -> CLLocation {
-        // 1. Check if we already have a location (fast path)
-        if let location = location {
-            return location
+        logger.info("getCurrentLocation: entering function")
+        
+        // If we already have a recent location, return it immediately
+        if let existing = location {
+            logger.info("Returning cached location")
+            return existing
         }
         
-        // 2. Check/Request Authorization
-        let status = manager.authorizationStatus
-        if status == .notDetermined {
-            manager.requestWhenInUseAuthorization()
-            // Wait briefly for auth
-            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5s
-        }
-        
-        guard manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways else {
-            throw LocationError.authorizationDenied
-        }
-        
-        // 3. Request Location with Continuation
+        // Cancel any stale continuation
         if continuation != nil {
-            continuation?.resume(throwing: LocationError.requestInProgress)
+            logger.warning("Clearing stale continuation")
+            let oldContinuation = continuation
             continuation = nil
+            oldContinuation?.resume(throwing: LocationError.requestInProgress)
         }
         
+        // Check authorization first
+        let status = manager.authorizationStatus
+        logger.info("Authorization status: \(String(describing: status), privacy: .public)")
+        
+        switch status {
+        case .denied:
+            throw LocationError.authorizationDenied
+        case .restricted:
+            throw LocationError.authorizationRestricted
+        case .notDetermined:
+            // Request authorization - this will show the dialog
+            manager.requestWhenInUseAuthorization()
+            // Wait a bit for user to respond, then check again
+            try await Task.sleep(for: .milliseconds(500))
+            if manager.authorizationStatus != .authorizedWhenInUse && 
+               manager.authorizationStatus != .authorizedAlways {
+                throw LocationError.authorizationDenied
+            }
+        default:
+            break
+        }
+        
+        isAuthorized = true
+        logger.info("Requesting single location update...")
+        
+        // Use a simple continuation without nested Tasks
         return try await withCheckedThrowingContinuation { cont in
             self.continuation = cont
             self.manager.requestLocation()
             
-            // 4. Safety Timeout
-            Task {
-                try? await Task.sleep(nanoseconds: 5 * 1_000_000_000) // 5s timeout
-                if let c = self.continuation {
-                    self.continuation = nil
-                    c.resume(throwing: LocationError.timeout)
-                    self.manager.stopUpdatingLocation()
-                }
+            // Set up a timeout using DispatchQueue (not Task!)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                guard let self = self, self.continuation != nil else { return }
+                self.logger.warning("Location request timed out")
+                self.finishContinuation(with: .failure(LocationError.authorizationDenied))
             }
         }
     }
@@ -94,13 +112,16 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     @MainActor
     func geocode(city: String) async throws -> CLLocationCoordinate2D {
         let trimmed = city.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { throw LocationError.invalidCity }
+        guard !trimmed.isEmpty else {
+            throw LocationError.invalidCity
+        }
 
         let geocoder = CLGeocoder()
         let placemarks = try await geocoder.geocodeAddressString(trimmed)
         guard let coordinate = placemarks.first?.location?.coordinate else {
             throw LocationError.noGeocodingResult
         }
+
         return coordinate
     }
     
@@ -110,27 +131,56 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         let loc2 = CLLocation(latitude: to.latitude, longitude: to.longitude)
         return loc1.distance(from: loc2) / 1000.0
     }
-
-    // MARK: - Delegate Methods
     
+    func StartUpdating() { // capitalized to avoid conflict if any, actually simpler: use manager directly if needed
+        manager.startUpdatingLocation()
+    }
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let newLocation = locations.last else { return }
         self.location = newLocation
-        if let c = continuation {
-            continuation = nil
-            c.resume(returning: newLocation)
-        }
+        logger.info("Location received: \(newLocation, privacy: .public)")
+        finishContinuation(with: .success(newLocation))
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // Ignore simple errors if we keep trying, but for requestLocation we must fail
-        if let c = continuation {
-            continuation = nil
-            c.resume(throwing: error)
+        errorMessage = error.localizedDescription
+        logger.error("Location error: \(error.localizedDescription, privacy: .public)")
+        finishContinuation(with: .failure(error))
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            isAuthorized = true
+            if continuation != nil {
+                manager.requestLocation()
+            }
+        case .denied:
+            isAuthorized = false
+            errorMessage = LocationError.authorizationDenied.localizedDescription
+            logger.error("Location authorization denied")
+            finishContinuation(with: .failure(LocationError.authorizationDenied))
+        case .restricted:
+            isAuthorized = false
+            errorMessage = LocationError.authorizationRestricted.localizedDescription
+            logger.error("Location authorization restricted")
+            finishContinuation(with: .failure(LocationError.authorizationRestricted))
+        case .notDetermined:
+            isAuthorized = false
+        @unknown default:
+            isAuthorized = false
         }
     }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        isAuthorized = (manager.authorizationStatus == .authorizedWhenInUse || manager.authorizationStatus == .authorizedAlways)
+
+    private func finishContinuation(with result: Result<CLLocation, Error>) {
+        guard let continuation else { return }
+        self.continuation = nil
+        switch result {
+        case .success(let location):
+            continuation.resume(returning: location)
+        case .failure(let error):
+            continuation.resume(throwing: error)
+        }
     }
 }

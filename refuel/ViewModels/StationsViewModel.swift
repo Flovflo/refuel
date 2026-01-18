@@ -1,10 +1,3 @@
-//
-//  StationsViewModel.swift
-//  refuel
-//
-//  Created by Codex on 2026-01-18.
-//
-
 import CoreLocation
 import Foundation
 import Observation
@@ -31,7 +24,7 @@ final class StationsViewModel {
             case .location(let error):
                 return error.localizedDescription
             case .unexpected(let error):
-                return error.localizedDescription
+                return "Unexpected error: \(error.localizedDescription)"
             }
         }
     }
@@ -39,26 +32,17 @@ final class StationsViewModel {
     var stations: [FuelStation] = []
     var state: ViewState = .idle
     var errorMessage: String?
-    var selectedFuelType: FuelType = .gazole {
-        didSet {
-            Task { await loadStations(forceRefresh: false) }
-        }
-    }
+    var selectedFuelType: FuelType = .gazole
+    var adviceMessage: String?
+    var bestDealNearHome: FuelStation?
+    var bestDealNearWork: FuelStation?
 
-    // Dependencies
     private let dataService: FuelDataService
     private let locationManager: LocationManager
     private let advisorService: AdvisorService
-    
-    // User Profile
-    var userProfile: UserProfile?
-    var bestDealNearHome: FuelStation?
-    var bestDealNearWork: FuelStation?
-    var adviceMessage: String?
-    
-    // Cache
+    private let logger = Logger.refuel
+    private var userProfile: UserProfile?
     private var cachedStations: [FuelStation] = []
-    private let logger = Logger(subsystem: "caflex.refuel", category: "StationsViewModel")
 
     init(
         dataService: FuelDataService? = nil,
@@ -68,166 +52,160 @@ final class StationsViewModel {
         self.dataService = dataService ?? FuelDataService()
         self.locationManager = locationManager ?? LocationManager()
         self.advisorService = advisorService ?? AdvisorService()
-        // Do NOT call sync loadUserProfile here to avoid blocking init
+        loadUserProfile()
     }
-    
-    /// Main entry point to load data
-    func loadStations(forceRefresh: Bool = true) async {
+
+    func loadStations() async {
+        logger.info("loadStations: start")
         state = .loading
         errorMessage = nil
-        
-        // 1. Load User Profile if needed
-        if userProfile == nil {
-            userProfile = PersistenceManager.shared.fetchUserProfile()
-            if let profile = userProfile {
-                // Only set if not already set by user interaction, but here we init
-                if forceRefresh { selectedFuelType = profile.fuelType }
-            }
+        var finalState: ViewState = .idle
+        defer {
+            state = finalState
+            logger.info("loadStations: end state=\(String(describing: finalState), privacy: .public)")
         }
 
         do {
-            // 2. Fetch Data (Network)
-            if forceRefresh || cachedStations.isEmpty {
-                cachedStations = try await dataService.fetchStations()
-            }
-            
-            // 3. Resolve Location (GPS -> Home -> Work -> Fallback)
-            let userLocation = await resolveUserLocation()
-            
-            // 4. Sort and Filter (Background Task)
-            // Use local copies to capture context safely
-            let rawStations = cachedStations
-            let type = selectedFuelType
-            let radius = 5.0 // 5km limit
-            
-            stations = await Task.detached {
-                return StationsViewModel.filterAndSortStations(
-                    stations: rawStations,
-                    location: userLocation,
-                    fuelType: type,
-                    radius: radius
-                )
-            }.value
-            
-            // 5. Update Advice & Home/Work deals
-            await updateDealsAndAdvice()
-            
-            state = .idle
-            
+            let fetchedStations = try await dataService.fetchStations()
+            cachedStations = fetchedStations
+            let resolvedLocation = await resolveUserLocation()
+            stations = sortStations(fetchedStations, with: resolvedLocation)
+            await loadStationsNearHome(using: fetchedStations)
+            await loadStationsNearWork(using: fetchedStations)
+            updateAdviceMessage()
+        } catch let error as FuelError {
+            let message = StationsViewModelError.data(error).localizedDescription
+            errorMessage = message
+            finalState = .error(message)
+            logger.error("loadStations: data error \(error.localizedDescription, privacy: .public)")
         } catch {
-            handleError(error)
+            let message = StationsViewModelError.unexpected(error).localizedDescription
+            errorMessage = message
+            finalState = .error(message)
+            logger.error("loadStations: unexpected error \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    /// Search for a specific city
     func search(city: String) async {
         let trimmed = city.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            await loadStations(forceRefresh: false)
+            logger.info("search: empty city, delegating to loadStations")
+            await loadStations()
             return
         }
-        
+
+        logger.info("search: start city=\(trimmed, privacy: .public)")
         state = .loading
+        errorMessage = nil
+        var finalState: ViewState = .idle
+        defer {
+            state = finalState
+            logger.info("search: end state=\(String(describing: finalState), privacy: .public)")
+        }
+
         do {
             let coordinate = try await locationManager.geocode(city: trimmed)
-            let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-            
-            let rawStations = cachedStations
-            let type = selectedFuelType
-            let radius = 5.0
-            
-            stations = await Task.detached {
-                return StationsViewModel.filterAndSortStations(
-                    stations: rawStations,
-                    location: location,
-                    fuelType: type,
-                    radius: radius
-                )
-            }.value
-            
-            state = .idle
+            let searchLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+            let fetchedStations = try await dataService.fetchStations()
+            cachedStations = fetchedStations
+            stations = sortStations(fetchedStations, with: searchLocation)
+            await loadStationsNearHome(using: fetchedStations)
+            await loadStationsNearWork(using: fetchedStations)
+            updateAdviceMessage()
+        } catch let error as FuelError {
+            let message = StationsViewModelError.data(error).localizedDescription
+            errorMessage = message
+            finalState = .error(message)
+            logger.error("search: data error \(error.localizedDescription, privacy: .public)")
         } catch {
-            state = .error("Ville introuvable")
+            let message = StationsViewModelError.location(error).localizedDescription
+            errorMessage = message
+            finalState = .error(message)
+            logger.error("search: location error \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    // MARK: - Private Helpers
-
-    private func resolveUserLocation() async -> CLLocation {
-        // A. Try One-Shot GPS (Preferred if working)
+    private func resolveUserLocation() async -> CLLocation? {
+        logger.info("resolveUserLocation: attempting GPS")
         do {
-            logger.info("Attempting to get GPS location...")
-            return try await locationManager.getCurrentLocation()
+            let loc = try await locationManager.getCurrentLocation()
+            logger.info("resolveUserLocation: GPS success")
+            return loc
         } catch {
-            logger.warning("GPS failed or timed out: \(error.localizedDescription). Falling back.")
+            logger.warning("resolveUserLocation: GPS failed, using fallback. Error: \(error.localizedDescription, privacy: .public)")
+            errorMessage = StationsViewModelError.location(error).localizedDescription
+            if let homeCoordinate = userProfile?.homeCoordinate {
+                logger.info("resolveUserLocation: using home coordinates")
+                return CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
+            }
+            if let last = locationManager.lastKnownLocation {
+                logger.info("resolveUserLocation: using last known location")
+                return last
+            }
+            logger.warning("resolveUserLocation: no fallback available")
+            return nil
         }
-        
-        // B. Try Home
-        if let home = userProfile?.homeCoordinate {
-            logger.info("Using Home location")
-            return CLLocation(latitude: home.latitude, longitude: home.longitude)
-        }
-        
-        // C. Try Work
-        if let work = userProfile?.workCoordinate {
-            logger.info("Using Work location")
-            return CLLocation(latitude: work.latitude, longitude: work.longitude)
-        }
-        
-        // D. Fallback (Paris) - Ensures data always shows
-        logger.warning("No location found. Defaulting to Paris.")
-        return CLLocation(latitude: 48.8566, longitude: 2.3522)
     }
 
-    private func updateDealsAndAdvice() async {
-        guard let profile = userProfile else { return }
-        
-        let type = selectedFuelType
-        let localStations = cachedStations
-        
-        // Compute best deals for Home/Work (Offloaded)
-        if let home = profile.homeCoordinate {
-             let loc = CLLocation(latitude: home.latitude, longitude: home.longitude)
-             let sorted = await Task.detached {
-                 return StationsViewModel.filterAndSortStations(
-                    stations: localStations,
-                    location: loc,
-                    fuelType: type,
-                    radius: 5.0
-                 )
-             }.value
-             bestDealNearHome = sorted.first
-        }
-        
-        if let work = profile.workCoordinate {
-             let loc = CLLocation(latitude: work.latitude, longitude: work.longitude)
-             let sorted = await Task.detached {
-                 return StationsViewModel.filterAndSortStations(
-                    stations: localStations,
-                    location: loc,
-                    fuelType: type,
-                    radius: 5.0
-                 )
-             }.value
-             bestDealNearWork = sorted.first
-        }
-        
-        let cheapest = bestDealNearHome ?? bestDealNearWork ?? stations.first
-        adviceMessage = advisorService.advice(profile: profile, cheapestStation: cheapest)
+    private func fetchStationsSorted(using location: CLLocation?) async throws -> [FuelStation] {
+        let fetchedStations = try await dataService.fetchStations()
+        let sorted = sortStations(fetchedStations, with: location)
+        logger.info("fetchStationsSorted: result count \(sorted.count, privacy: .public)")
+        return sorted
     }
-    
-    private func handleError(_ error: Error) {
-        if let fuelError = error as? FuelError {
-            let msg = StationsViewModelError.data(fuelError).localizedDescription
-            self.errorMessage = msg
-            self.state = .error(msg)
-        } else {
-            let msg = StationsViewModelError.unexpected(error).localizedDescription
-            self.errorMessage = msg
-            self.state = .error(msg)
+
+    /// Maximum search radius in kilometers
+    private let maxRadiusKm: Double = 30.0
+
+    private func sortStations(_ stations: [FuelStation], with location: CLLocation?) -> [FuelStation] {
+        guard let location else {
+            // No location: return sorted by city name, limited to 50
+            logger.info("No location available, returning first 50 by city name")
+            return Array(stations.sorted { lhs, rhs in
+                lhs.city.localizedCaseInsensitiveCompare(rhs.city) == .orderedAscending
+            }.prefix(50))
         }
+
+        let userCoordinate = location.coordinate
+        let fuelType = selectedFuelType
+
+        // Calculate distance for all stations
+        var allWithDistance = stations.map { station -> FuelStation in
+            var mutable = station
+            let stationCoordinate = CLLocationCoordinate2D(
+                latitude: station.latitude,
+                longitude: station.longitude
+            )
+            mutable.distanceKm = LocationManager.distanceKm(from: userCoordinate, to: stationCoordinate)
+            return mutable
+        }
+
+        // Filter to only stations that have the selected fuel type
+        allWithDistance = allWithDistance.filter { station in
+            station.prices.contains { $0.fuelType == fuelType }
+        }
+
+        // Filter by radius
+        var nearbyStations = allWithDistance.filter { ($0.distanceKm ?? .greatestFiniteMagnitude) <= maxRadiusKm }
+
+        // FALLBACK: If no stations within radius, take the closest 20 regardless of distance
+        if nearbyStations.isEmpty {
+            logger.warning("No stations within \(self.maxRadiusKm, privacy: .public) km, showing closest 20")
+            allWithDistance.sort { ($0.distanceKm ?? .greatestFiniteMagnitude) < ($1.distanceKm ?? .greatestFiniteMagnitude) }
+            nearbyStations = Array(allWithDistance.prefix(20))
+        }
+
+        // Sort by cheapest price for the selected fuel type
+        nearbyStations.sort { lhs, rhs in
+            let leftPrice = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+            let rightPrice = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? .greatestFiniteMagnitude
+            return leftPrice < rightPrice
+        }
+
+        logger.info("Filtered to \(nearbyStations.count, privacy: .public) stations (radius=\(self.maxRadiusKm, privacy: .public) km)")
+        return nearbyStations
     }
-    
+
     func price(for station: FuelStation, fallbackToCheapest: Bool = false) -> Double? {
         if let match = station.prices.first(where: { $0.fuelType == selectedFuelType }) {
             return match.price
@@ -235,70 +213,48 @@ final class StationsViewModel {
         return fallbackToCheapest ? station.cheapestPrice : nil
     }
 
-    // MARK: - Static Sorting Logic (Background Safe)
-    
-    /// Pure function for filtering and sorting. Runs off-main-thread.
-    nonisolated static func filterAndSortStations(
-        stations: [FuelStation],
-        location: CLLocation,
-        fuelType: FuelType,
-        radius: Double
-    ) -> [FuelStation] {
-        // 1. Rough Bounding Box Filter (Fast)
-        // 1 deg lat ~ 111km. 0.2 deg ~ 20km.
-        let userLat = location.coordinate.latitude
-        let userLon = location.coordinate.longitude
-        let boxSize = 0.25
-        
-        let candidates = stations.filter { s in
-            // Check fuel first
-            guard s.prices.contains(where: { $0.fuelType == fuelType }) else { return false }
-            // Check box
-            return abs(s.latitude - userLat) < boxSize && abs(s.longitude - userLon) < boxSize
+    func loadStationsNearHome() async {
+        await loadStationsNearHome(using: cachedStations)
+        updateAdviceMessage()
+    }
+
+    func loadStationsNearWork() async {
+        await loadStationsNearWork(using: cachedStations)
+        updateAdviceMessage()
+    }
+
+    private func loadStationsNearHome(using stations: [FuelStation]) async {
+        guard let coordinate = userProfile?.homeCoordinate else {
+            bestDealNearHome = nil
+            return
         }
-        
-        // 2. Precise Distance Calc
-        var valid = candidates.compactMap { s -> FuelStation? in
-            var m = s
-            let dist = LocationManager.distanceKm(
-                from: location.coordinate,
-                to: CLLocationCoordinate2D(latitude: s.latitude, longitude: s.longitude)
-            )
-            if dist <= radius {
-                m.distanceKm = dist
-                return m
-            }
-            return nil
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        bestDealNearHome = sortStations(stations, with: location).first
+    }
+
+    private func loadStationsNearWork(using stations: [FuelStation]) async {
+        guard let coordinate = userProfile?.workCoordinate else {
+            bestDealNearWork = nil
+            return
         }
-        
-        // 3. Fallback if empty (Desert mode)
-        if valid.isEmpty {
-             // Take closest 20 globally (Slow but safe fallback)
-             var all = stations.map { s -> FuelStation in
-                 var m = s
-                 m.distanceKm = LocationManager.distanceKm(
-                    from: location.coordinate,
-                    to: CLLocationCoordinate2D(latitude: s.latitude, longitude: s.longitude)
-                 )
-                 return m
-             }
-             // Filter by fuel type
-             all = all.filter { s in s.prices.contains(where: { $0.fuelType == fuelType }) }
-             
-             // Sort by distance
-             all.sort { ($0.distanceKm ?? 9999) < ($1.distanceKm ?? 9999) }
-             valid = Array(all.prefix(20))
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        bestDealNearWork = sortStations(stations, with: location).first
+    }
+
+    private func loadUserProfile() {
+        userProfile = PersistenceManager.shared.fetchUserProfile()
+        if let profile = userProfile {
+            selectedFuelType = profile.fuelType
         }
-        
-        // 4. Sort by Price
-        valid.sort { lhs, rhs in
-            let p1 = lhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? 999
-            let p2 = rhs.prices.first(where: { $0.fuelType == fuelType })?.price ?? 999
-            return p1 < p2
+    }
+
+    private func updateAdviceMessage() {
+        guard let profile = userProfile else {
+            adviceMessage = nil
+            return
         }
-        
-        // 5. Strict Limit (30)
-        return Array(valid.prefix(30))
+        let cheapestStation = bestDealNearHome ?? bestDealNearWork ?? stations.first
+        adviceMessage = advisorService.advice(profile: profile, cheapestStation: cheapestStation)
     }
 }
 

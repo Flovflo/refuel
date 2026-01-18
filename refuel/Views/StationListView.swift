@@ -28,7 +28,63 @@ struct StationListView: View {
                 backgroundView
                     .allowsHitTesting(false)
 
-                contentView
+                switch viewModel.state {
+                case .loading:
+                    ProgressView("Recherche des stations...")
+                        .padding()
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .error(let message):
+                    VStack(spacing: 16) {
+                        ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle.fill", description: Text(message))
+                        Button("Réessayer") {
+                            Task { await viewModel.loadStations() }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .padding()
+                case .idle:
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            if let message = viewModel.adviceMessage {
+                                adviceCard(message: message)
+                            }
+
+                            headerCard
+
+                            bestDealSection
+
+                            if let message = viewModel.errorMessage {
+                                GlassCard {
+                                    Label(message, systemImage: "location.slash")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+
+                            LazyVStack(spacing: 14) {
+                                ForEach(viewModel.stations) { station in
+                                    Button {
+                                        selectedStation = station
+                                    } label: {
+                                        StationRow(
+                                            station: station,
+                                            fuelType: viewModel.selectedFuelType,
+                                            price: viewModel.price(for: station)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
+                    }
+                    .refreshable {
+                        await viewModel.loadStations()
+                    }
+                }
             }
             .navigationTitle("REFUEL")
             .searchable(text: $searchText, prompt: "Ville")
@@ -37,9 +93,9 @@ struct StationListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
+                    Button(action: {
                         Task { await viewModel.loadStations() }
-                    } label: {
+                    }) {
                         Image(systemName: "arrow.clockwise")
                     }
                 }
@@ -53,71 +109,6 @@ struct StationListView: View {
                     hasAppeared = true
                 }
             }
-        }
-    }
-
-    @ViewBuilder
-    private var contentView: some View {
-        switch viewModel.state {
-        case .loading:
-            ProgressView("Recherche des stations...")
-                .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        case .error(let message):
-            VStack(spacing: 16) {
-                ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle.fill", description: Text(message))
-                Button("Réessayer") {
-                    Task { await viewModel.loadStations() }
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-        case .idle:
-            stationListView
-        }
-    }
-
-    private var stationListView: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                if let message = viewModel.adviceMessage {
-                    adviceCard(message: message)
-                }
-
-                headerCard
-
-                bestDealSection
-
-                if let message = viewModel.errorMessage {
-                    GlassCard {
-                        Label(message, systemImage: "location.slash")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                LazyVStack(spacing: 14) {
-                    ForEach(viewModel.stations) { station in
-                        Button {
-                            selectedStation = station
-                        } label: {
-                            StationRow(
-                                station: station,
-                                fuelType: viewModel.selectedFuelType,
-                                price: viewModel.price(for: station)
-                            )
-                        }
-                        .contentShape(Rectangle())
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
-        }
-        .refreshable {
-            await viewModel.loadStations()
         }
     }
 
