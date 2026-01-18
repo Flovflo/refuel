@@ -52,15 +52,12 @@ async def download_and_extract(year: int) -> bytes | None:
 def _parse_timestamp(val: str | None) -> datetime | None:
     if not val:
         return None
-    # Format usually "2025-01-01T12:00:00" or similar
-    # Sometimes it has different formats, but assuming standard
     try:
         if len(val) == 10: # YYYY-MM-DD
              return datetime.strptime(val, "%Y-%m-%d")
         return datetime.fromisoformat(val)
     except ValueError:
         try:
-             # Fallback for manual parsing if isoformat fails (rare in this dataset)
              return datetime.strptime(val, "%Y-%m-%dT%H:%M:%S")
         except:
              return None
@@ -82,7 +79,6 @@ async def process_xml_content(xml_content: bytes):
                 lat_str = elem.get("latitude")
                 lon_str = elem.get("longitude")
                 cp = elem.get("cp")
-                pop = elem.get("pop") # Point de Vente type (R = Road, A = Highway)
                 
                 # Address
                 addr_elem = elem.find("adresse")
@@ -101,8 +97,6 @@ async def process_xml_content(xml_content: bytes):
                 except (ValueError, TypeError):
                     continue
                     
-                # Create Station Dict
-                # Use WKT for geometry
                 wkt = f"POINT({lon} {lat})"
                 
                 station_data = {
@@ -116,22 +110,13 @@ async def process_xml_content(xml_content: bytes):
                 
                 # Parse Prices
                 for price_elem in elem.findall("prix"):
-                    nom = price_elem.get("nom") # Gazole, etc.
+                    nom = price_elem.get("nom")
                     val_str = price_elem.get("valeur")
                     maj_str = price_elem.get("maj")
                     
                     if not nom or not val_str or not maj_str:
                         continue
                         
-                    # Normalize FuelType
-                    # Existing importer logic:
-                    # FuelType enum is string based.
-                    # e.g. "Gazole", "SP95", "E10"
-                    # We accept as is if it matches our Enum?
-                    # Or map it? In previous importer we mapped it roughly or trusted it.
-                    # Models.py: E10="E10", GAZOLE="Gazole", etc.
-                    # The XML usually matches "Gazole", "SP95", "E10", "E85", "GPLc", "SP98"
-                    
                     try:
                         price_val = float(val_str)
                         update_date = _parse_timestamp(maj_str)
@@ -148,15 +133,26 @@ async def process_xml_content(xml_content: bytes):
                 
                 # Batch processing
                 if len(station_rows) >= BATCH_SIZE:
-                     await _flush_stations(station_rows)
-                     station_rows.clear()
+                    try:
+                        await _flush_stations(station_rows)
+                    except Exception as e:
+                        logger.error(f"Batch Flush Error (Stations): {e}")
+                    station_rows.clear()
                      
                 if len(history_rows) >= BATCH_SIZE * 5: 
                      # Must flush stations first!
                      if station_rows:
-                         await _flush_stations(station_rows)
+                         try:
+                             await _flush_stations(station_rows)
+                         except Exception as e:
+                             logger.error(f"Batch Flush Error (Pre-History Stations): {e}")
                          station_rows.clear()
-                     await _flush_history(history_rows)
+                     
+                     try:
+                         await _flush_history(history_rows)
+                     except Exception as e:
+                         # Log only first 100 chars to avoid huge logs
+                         logger.error(f"Batch Flush Error (History): {str(e)[:100]}")
                      history_rows.clear()
                 
                 count += 1
@@ -174,9 +170,15 @@ async def process_xml_content(xml_content: bytes):
                 
         # Flush remaining
         if station_rows:
-            await _flush_stations(station_rows)
+            try:
+                await _flush_stations(station_rows)
+            except Exception as e:
+                logger.error(f"Final Flush Error (Stations): {e}")
         if history_rows:
-            await _flush_history(history_rows)
+            try:
+                await _flush_history(history_rows)
+            except Exception as e:
+                logger.error(f"Final Flush Error (History): {e}")
             
     logger.info(f"XML Parsing complete. Total stations: {count}")
 
@@ -214,12 +216,14 @@ async def import_history(years: list[int]):
         logger.info(f"--- Starting Import for {year} ---")
         xml_bytes = await download_and_extract(year)
         if xml_bytes:
-             await process_xml_content(xml_bytes)
+             try:
+                 await process_xml_content(xml_bytes)
+             except Exception as e:
+                 logger.error(f"Failed to process XML for {year}: {e}")
         logger.info(f"--- Finished Import for {year} ---")
 
 if __name__ == "__main__":
     import sys
-    # Default to 2025, 2026
     years = [2025, 2026]
     try:
         asyncio.run(import_history(years))
