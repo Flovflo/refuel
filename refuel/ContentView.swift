@@ -9,17 +9,25 @@ import SwiftData
 import SwiftUI
 
 struct ContentView: View {
-    var body: some View {
-        TabView {
-            StationListView()
-                .tabItem {
-                    Label("Liste", systemImage: "list.bullet")
-                }
+    @Query private var profiles: [UserProfile]
 
-            MapView()
-                .tabItem {
-                    Label("Carte", systemImage: "map")
+    var body: some View {
+        Group {
+            if profiles.isEmpty {
+                OnboardingView()
+            } else {
+                TabView {
+                    StationListView()
+                        .tabItem {
+                            Label("Liste", systemImage: "list.bullet")
+                        }
+
+                    MapView()
+                        .tabItem {
+                            Label("Carte", systemImage: "map")
+                        }
                 }
+            }
         }
         .tint(.orange)
     }
