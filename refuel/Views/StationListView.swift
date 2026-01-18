@@ -24,11 +24,62 @@ struct StationListView: View {
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                backgroundView
-                    .allowsHitTesting(false)
-
-                contentView
+            Group {
+                switch viewModel.state {
+                case .loading:
+                    ProgressView("Recherche des stations...")
+                case .error(let message):
+                    ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(message))
+                case .idle:
+                    List {
+                        // Advice section
+                        if let message = viewModel.adviceMessage {
+                            Section {
+                                Label(message, systemImage: "sparkles")
+                                    .font(.subheadline)
+                            }
+                        }
+                        
+                        // Fuel type picker
+                        Section("Carburant") {
+                            Picker("Type", selection: $viewModel.selectedFuelType) {
+                                ForEach(FuelType.allCases) { fuel in
+                                    Text(fuel.rawValue).tag(fuel)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+                        
+                        // Stations list
+                        Section("Stations à proximité (\(viewModel.stations.count))") {
+                            ForEach(viewModel.stations) { station in
+                                NavigationLink(value: station) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(station.city.capitalized)
+                                            .font(.headline)
+                                        Text(station.address.capitalized)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        if let price = viewModel.price(for: station) {
+                                            Text(String(format: "%.3f €/L", price))
+                                                .font(.subheadline)
+                                                .foregroundStyle(.green)
+                                        }
+                                        if let distance = station.distanceKm {
+                                            Text(String(format: "%.1f km", distance))
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .padding(.vertical, 4)
+                                }
+                            }
+                        }
+                    }
+                    .refreshable {
+                        await viewModel.loadStations()
+                    }
+                }
             }
             .navigationTitle("REFUEL")
             .searchable(text: $searchText, prompt: "Ville")
@@ -37,14 +88,14 @@ struct StationListView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
+                    Button {
                         Task { await viewModel.loadStations() }
-                    }) {
+                    } label: {
                         Image(systemName: "arrow.clockwise")
                     }
                 }
             }
-            .navigationDestination(item: $selectedStation) { station in
+            .navigationDestination(for: FuelStation.self) { station in
                 StationDetailView(station: station)
             }
             .task {
@@ -53,71 +104,6 @@ struct StationListView: View {
                     hasAppeared = true
                 }
             }
-        }
-    }
-
-    @ViewBuilder
-    private var contentView: some View {
-        switch viewModel.state {
-        case .loading:
-            ProgressView("Recherche des stations...")
-                .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        case .error(let message):
-            VStack(spacing: 16) {
-                ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle.fill", description: Text(message))
-                Button("Réessayer") {
-                    Task { await viewModel.loadStations() }
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding()
-        case .idle:
-            stationListView
-        }
-    }
-
-    private var stationListView: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                if let message = viewModel.adviceMessage {
-                    adviceCard(message: message)
-                }
-
-                headerCard
-
-                bestDealSection
-
-                if let message = viewModel.errorMessage {
-                    GlassCard {
-                        Label(message, systemImage: "location.slash")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                LazyVStack(spacing: 14) {
-                    ForEach(viewModel.stations) { station in
-                        Button {
-                            selectedStation = station
-                        } label: {
-                            StationRow(
-                                station: station,
-                                fuelType: viewModel.selectedFuelType,
-                                price: viewModel.price(for: station)
-                            )
-                        }
-                        .contentShape(Rectangle())
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
-        }
-        .refreshable {
-            await viewModel.loadStations()
         }
     }
 
