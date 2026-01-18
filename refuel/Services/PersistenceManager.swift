@@ -81,13 +81,14 @@ final class PersistenceManager {
                 let fuelType = price.fuelType
                 let priceValue = price.price
                 let predicate = #Predicate<StationPriceHistory> {
-                    $0.stationID == stationID && $0.fuelType == fuelType && $0.date == day
+                    $0.stationID == stationID && $0.date == day
                 }
                 var descriptor = FetchDescriptor(predicate: predicate)
-                descriptor.fetchLimit = 1
+                // descriptor.fetchLimit = 1 // Remove limit to find all for this day/station, then filter by type
 
                 do {
-                    if let existing = try context.fetch(descriptor).first {
+                    let candidates = try context.fetch(descriptor)
+                    if let existing = candidates.first(where: { $0.fuelType == fuelType }) {
                         existing.price = priceValue
                         existing.date = day
                     } else {
