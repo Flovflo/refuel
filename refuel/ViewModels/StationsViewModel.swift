@@ -33,17 +33,26 @@ final class StationsViewModel {
     var state: ViewState = .idle
     var errorMessage: String?
     var selectedFuelType: FuelType = .gazole
+    var adviceMessage: String?
+    var bestDealNearHome: FuelStation?
+    var bestDealNearWork: FuelStation?
 
     private let dataService: FuelDataService
     private let locationManager: LocationManager
+    private let advisorService: AdvisorService
     private let logger = Logger.refuel
+    private var userProfile: UserProfile?
+    private var cachedStations: [FuelStation] = []
 
     init(
         dataService: FuelDataService? = nil,
-        locationManager: LocationManager? = nil
+        locationManager: LocationManager? = nil,
+        advisorService: AdvisorService? = nil
     ) {
         self.dataService = dataService ?? FuelDataService()
         self.locationManager = locationManager ?? LocationManager()
+        self.advisorService = advisorService ?? AdvisorService()
+        loadUserProfile()
     }
 
     func loadStations() async {
@@ -57,8 +66,13 @@ final class StationsViewModel {
         }
 
         do {
-            let fetchedStations = try await fetchStationsSorted(using: await resolveUserLocation())
-            stations = fetchedStations
+            let fetchedStations = try await dataService.fetchStations()
+            cachedStations = fetchedStations
+            let resolvedLocation = await resolveUserLocation()
+            stations = sortStations(fetchedStations, with: resolvedLocation)
+            await loadStationsNearHome(using: fetchedStations)
+            await loadStationsNearWork(using: fetchedStations)
+            updateAdviceMessage()
         } catch let error as FuelError {
             let message = StationsViewModelError.data(error).localizedDescription
             errorMessage = message
@@ -92,8 +106,12 @@ final class StationsViewModel {
         do {
             let coordinate = try await locationManager.geocode(city: trimmed)
             let searchLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-            let fetchedStations = try await fetchStationsSorted(using: searchLocation)
-            stations = fetchedStations
+            let fetchedStations = try await dataService.fetchStations()
+            cachedStations = fetchedStations
+            stations = sortStations(fetchedStations, with: searchLocation)
+            await loadStationsNearHome(using: fetchedStations)
+            await loadStationsNearWork(using: fetchedStations)
+            updateAdviceMessage()
         } catch let error as FuelError {
             let message = StationsViewModelError.data(error).localizedDescription
             errorMessage = message
@@ -113,6 +131,9 @@ final class StationsViewModel {
         } catch {
             // Simplify error handling for location
             errorMessage = StationsViewModelError.location(error).localizedDescription
+            if let homeCoordinate = userProfile?.homeCoordinate {
+                return CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
+            }
             return locationManager.lastKnownLocation
         }
     }
@@ -181,6 +202,50 @@ final class StationsViewModel {
             return match.price
         }
         return fallbackToCheapest ? station.cheapestPrice : nil
+    }
+
+    func loadStationsNearHome() async {
+        await loadStationsNearHome(using: cachedStations)
+        updateAdviceMessage()
+    }
+
+    func loadStationsNearWork() async {
+        await loadStationsNearWork(using: cachedStations)
+        updateAdviceMessage()
+    }
+
+    private func loadStationsNearHome(using stations: [FuelStation]) async {
+        guard let coordinate = userProfile?.homeCoordinate else {
+            bestDealNearHome = nil
+            return
+        }
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        bestDealNearHome = sortStations(stations, with: location).first
+    }
+
+    private func loadStationsNearWork(using stations: [FuelStation]) async {
+        guard let coordinate = userProfile?.workCoordinate else {
+            bestDealNearWork = nil
+            return
+        }
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        bestDealNearWork = sortStations(stations, with: location).first
+    }
+
+    private func loadUserProfile() {
+        userProfile = PersistenceManager.shared.fetchUserProfile()
+        if let profile = userProfile {
+            selectedFuelType = profile.fuelType
+        }
+    }
+
+    private func updateAdviceMessage() {
+        guard let profile = userProfile else {
+            adviceMessage = nil
+            return
+        }
+        let cheapestStation = bestDealNearHome ?? bestDealNearWork ?? stations.first
+        adviceMessage = advisorService.advice(profile: profile, cheapestStation: cheapestStation)
     }
 }
 

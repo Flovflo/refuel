@@ -26,6 +26,7 @@ struct StationListView: View {
         NavigationStack {
             ZStack {
                 backgroundView
+                    .allowsHitTesting(false)
 
                 switch viewModel.state {
                 case .loading:
@@ -45,7 +46,13 @@ struct StationListView: View {
                 case .idle:
                     ScrollView {
                         VStack(spacing: 16) {
+                            if let message = viewModel.adviceMessage {
+                                adviceCard(message: message)
+                            }
+
                             headerCard
+
+                            bestDealSection
 
                             if let message = viewModel.errorMessage {
                                 GlassCard {
@@ -102,6 +109,55 @@ struct StationListView: View {
                     hasAppeared = true
                 }
             }
+        }
+    }
+
+    private func adviceCard(message: String) -> some View {
+        GlassCard {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var bestDealSection: some View {
+        if let homeStation = viewModel.bestDealNearHome,
+           let workStation = viewModel.bestDealNearWork {
+            GlassCard {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Best Deal Near Home vs Work")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    bestDealCard(title: "Home", station: homeStation)
+                    bestDealCard(title: "Work", station: workStation)
+                }
+            }
+        }
+    }
+
+    private func bestDealCard(title: String, station: FuelStation) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title.uppercased())
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(station.city.capitalized)
+                    .font(.headline)
+                Text(station.address.capitalized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            PriceBadge(price: viewModel.price(for: station), fuelType: viewModel.selectedFuelType)
         }
     }
 

@@ -72,4 +72,54 @@ final class ServicesTests: XCTestCase {
         let stations = try await service.fetchStations()
         XCTAssertGreaterThan(stations.count, 0)
     }
+
+    @MainActor
+    func testAdvisorServiceDaysUntilRefillReturnsZeroWhenDue() {
+        let profile = UserProfile(
+            fuelType: .gazole,
+            tankCapacity: 50,
+            fuelConsumption: 6.5,
+            lastRefillDate: Date().addingTimeInterval(-10 * 24 * 60 * 60),
+            refillFrequencyDays: 10
+        )
+        let service = AdvisorService()
+
+        let days = service.daysUntilRefill(profile: profile)
+
+        XCTAssertEqual(days, 0)
+    }
+
+    @MainActor
+    func testAdvisorServiceCostPer100Km() {
+        let station = FuelStation(
+            id: "test",
+            address: "Rue de Test",
+            city: "Paris",
+            postalCode: "75001",
+            latitude: 48.8566,
+            longitude: 2.3522,
+            prices: [FuelPrice(fuelType: .gazole, price: 1.8, lastUpdate: Date())],
+            services: [],
+            isOpen24h: true
+        )
+        let service = AdvisorService()
+
+        let cost = service.costPer100Km(station: station, fuelType: .gazole, consumption: 6.5)
+
+        XCTAssertEqual(cost ?? 0, 11.7, accuracy: 0.0001)
+    }
+
+    @MainActor
+    func testAdvisorServiceAdviceWithMissingProfileData() {
+        let profile = UserProfile(
+            fuelType: .sp95,
+            tankCapacity: 45,
+            fuelConsumption: 7.0
+        )
+        let service = AdvisorService()
+
+        let message = service.advice(profile: profile, cheapestStation: nil)
+
+        XCTAssertEqual(message, "Complete your profile to get personalized advice.")
+    }
 }
