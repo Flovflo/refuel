@@ -101,7 +101,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
             self.manager.requestLocation()
             
             // Set up a timeout using DispatchQueue (not Task!)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
                 guard let self = self, self.continuation != nil else { return }
                 self.logger.warning("Location request timed out")
                 self.finishContinuation(with: .failure(LocationError.authorizationDenied))

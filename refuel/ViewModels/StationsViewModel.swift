@@ -126,15 +126,24 @@ final class StationsViewModel {
     }
 
     private func resolveUserLocation() async -> CLLocation? {
+        logger.info("resolveUserLocation: attempting GPS")
         do {
-            return try await locationManager.getCurrentLocation()
+            let loc = try await locationManager.getCurrentLocation()
+            logger.info("resolveUserLocation: GPS success")
+            return loc
         } catch {
-            // Simplify error handling for location
+            logger.warning("resolveUserLocation: GPS failed, using fallback. Error: \(error.localizedDescription, privacy: .public)")
             errorMessage = StationsViewModelError.location(error).localizedDescription
             if let homeCoordinate = userProfile?.homeCoordinate {
+                logger.info("resolveUserLocation: using home coordinates")
                 return CLLocation(latitude: homeCoordinate.latitude, longitude: homeCoordinate.longitude)
             }
-            return locationManager.lastKnownLocation
+            if let last = locationManager.lastKnownLocation {
+                logger.info("resolveUserLocation: using last known location")
+                return last
+            }
+            logger.warning("resolveUserLocation: no fallback available")
+            return nil
         }
     }
 
