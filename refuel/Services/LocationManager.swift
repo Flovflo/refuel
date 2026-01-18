@@ -54,31 +54,48 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     }
     
     func getCurrentLocation() async throws -> CLLocation {
+        // Cancel any stale request (shouldn't happen, but safety first)
         if continuation != nil {
-            logger.error("Location request already in progress")
-            throw LocationError.requestInProgress
+            logger.warning("Clearing stale location continuation")
+            finishContinuation(with: .failure(LocationError.requestInProgress))
         }
 
-        return try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-            logger.info("Requesting location...")
-            switch manager.authorizationStatus {
-            case .authorizedAlways, .authorizedWhenInUse:
-                isAuthorized = true
-                manager.requestLocation() // Request one-shot location
-            case .notDetermined:
-                isAuthorized = false
-                manager.requestWhenInUseAuthorization()
-            case .denied:
-                isAuthorized = false
-                finishContinuation(with: .failure(LocationError.authorizationDenied))
-            case .restricted:
-                isAuthorized = false
-                finishContinuation(with: .failure(LocationError.authorizationRestricted))
-            @unknown default:
-                isAuthorized = false
-                finishContinuation(with: .failure(LocationError.authorizationDenied))
+        return try await withThrowingTaskGroup(of: CLLocation.self) { group in
+            group.addTask {
+                try await withCheckedThrowingContinuation { continuation in
+                    self.continuation = continuation
+                    self.logger.info("Requesting location...")
+                    switch self.manager.authorizationStatus {
+                    case .authorizedAlways, .authorizedWhenInUse:
+                        self.isAuthorized = true
+                        self.manager.requestLocation()
+                    case .notDetermined:
+                        self.isAuthorized = false
+                        self.manager.requestWhenInUseAuthorization()
+                    case .denied:
+                        self.isAuthorized = false
+                        self.finishContinuation(with: .failure(LocationError.authorizationDenied))
+                    case .restricted:
+                        self.isAuthorized = false
+                        self.finishContinuation(with: .failure(LocationError.authorizationRestricted))
+                    @unknown default:
+                        self.isAuthorized = false
+                        self.finishContinuation(with: .failure(LocationError.authorizationDenied))
+                    }
+                }
             }
+            
+            group.addTask {
+                // 5-second timeout
+                try await Task.sleep(for: .seconds(5))
+                throw LocationError.authorizationDenied // Timeout fallback
+            }
+            
+            guard let result = try await group.next() else {
+                throw LocationError.authorizationDenied
+            }
+            group.cancelAll()
+            return result
         }
     }
 
