@@ -20,6 +20,9 @@ final class UserProfile {
     var homeLongitude: Double?
     var workLatitude: Double?
     var workLongitude: Double?
+    var homeAddress: String?
+    var workAddress: String?
+    var comparisonRadius: Double
     @Relationship(deleteRule: .cascade, inverse: \RefillEntry.profile) var refills: [RefillEntry]
 
     init(
@@ -32,6 +35,9 @@ final class UserProfile {
         homeLongitude: Double? = nil,
         workLatitude: Double? = nil,
         workLongitude: Double? = nil,
+        homeAddress: String? = nil,
+        workAddress: String? = nil,
+        comparisonRadius: Double = 15.0,
         refills: [RefillEntry] = []
     ) {
         self.fuelType = fuelType
@@ -43,6 +49,9 @@ final class UserProfile {
         self.homeLongitude = homeLongitude
         self.workLatitude = workLatitude
         self.workLongitude = workLongitude
+        self.homeAddress = homeAddress
+        self.workAddress = workAddress
+        self.comparisonRadius = comparisonRadius
         self.refills = refills
     }
 

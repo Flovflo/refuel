@@ -9,8 +9,15 @@ import SwiftUI
 import MapKit
 
 struct StationDetailView: View {
-    let station: FuelStation
-    
+    @State private var viewModel: StationDetailViewModel
+
+    @MainActor
+    init(station: FuelStation) {
+        _viewModel = State(initialValue: StationDetailViewModel(station: station))
+    }
+
+    private var station: FuelStation { viewModel.station }
+
     var body: some View {
         let cityName = station.city ?? "Unknown city"
         let addressLine = station.address ?? "Unknown address"
@@ -46,6 +53,36 @@ struct StationDetailView: View {
                     }
                     .padding(.horizontal, 16)
 
+                    if let analysis = viewModel.primaryAnalysis {
+                        GlassCard {
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("Analyse Prix")
+                                        .font(.headline)
+                                    Spacer()
+                                    PriceLevelBadge(level: analysis.priceLevel)
+                                }
+
+                                PriceTrendChart(analysis: analysis)
+
+                                HStack {
+                                    Text("Tendance: \(trendLabel(for: analysis.trend))")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Text(String(format: "Actuel %.3f €/L", analysis.currentPrice))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                    } else if case .loading = viewModel.state {
+                        ProgressView("Analyse des prix...")
+                    } else if case .error(let message) = viewModel.state {
+                        ContentUnavailableView("Analyse indisponible", systemImage: "exclamationmark.triangle.fill", description: Text(message))
+                    }
+
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Carburants")
                             .font(.headline)
@@ -64,7 +101,12 @@ struct StationDetailView: View {
 
                                     Spacer()
 
-                                    PriceBadge(price: price.price, fuelType: price.fuelType)
+                                    VStack(alignment: .trailing, spacing: 6) {
+                                        PriceBadge(price: price.price, fuelType: price.fuelType)
+                                        if let analysis = viewModel.analysisByFuelType[price.fuelType] {
+                                            PriceLevelBadge(level: analysis.priceLevel)
+                                        }
+                                    }
                                 }
                             }
                             .padding(.horizontal, 16)
@@ -100,6 +142,11 @@ struct StationDetailView: View {
         }
         .navigationTitle(cityName.capitalized)
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            if !isPreview {
+                await viewModel.load()
+            }
+        }
     }
 
     private var mapHeader: some View {
@@ -140,6 +187,50 @@ struct StationDetailView: View {
             endPoint: .bottomTrailing
         )
         .ignoresSafeArea()
+    }
+
+    private func trendLabel(for trend: String) -> String {
+        switch trend {
+        case "increasing":
+            return "en hausse"
+        case "decreasing":
+            return "en baisse"
+        default:
+            return "stable"
+        }
+    }
+
+    private var isPreview: Bool {
+        ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+    }
+}
+
+struct PriceTrendChart: View {
+    let analysis: PriceAnalysis
+
+    var body: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let range = max(analysis.max30Days - analysis.min30Days, 0.001)
+            let currentRatio = (analysis.currentPrice - analysis.min30Days) / range
+            let currentX = max(0, min(width, width * currentRatio))
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(height: 6)
+
+                Capsule()
+                    .fill(analysis.priceLevel.color)
+                    .frame(width: max(10, currentX), height: 6)
+
+                Circle()
+                    .fill(analysis.priceLevel.color)
+                    .frame(width: 12, height: 12)
+                    .offset(x: currentX - 6)
+            }
+        }
+        .frame(height: 16)
     }
 }
 

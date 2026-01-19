@@ -401,7 +401,9 @@ final class OnboardingViewModel {
                 lastRefillDate: lastRefillDate,
                 refillFrequencyDays: refillFrequencyDays,
                 homeCoordinate: homeCoordinate,
-                workCoordinate: workCoordinate
+                workCoordinate: workCoordinate,
+                homeAddress: homeAddress.trimmingCharacters(in: .whitespacesAndNewlines),
+                workAddress: workAddress.trimmingCharacters(in: .whitespacesAndNewlines)
             )
         } catch {
             errorMessage = error.localizedDescription

@@ -54,24 +54,15 @@ struct StationListView: View {
                         Section("Stations à proximité (\(viewModel.stations.count))") {
                             ForEach(viewModel.stations) { station in
                                 NavigationLink(value: station) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text((station.city ?? "Unknown city").capitalized)
-                                            .font(.headline)
-                                        Text((station.address ?? "Unknown address").capitalized)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                        if let price = viewModel.price(for: station) {
-                                            Text(String(format: "%.3f €/L", price))
-                                                .font(.subheadline)
-                                                .foregroundStyle(.green)
-                                        }
-                                        if let distance = station.distanceKm {
-                                            Text(String(format: "%.1f km", distance))
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    .padding(.vertical, 4)
+                                    StationRow(
+                                        station: station,
+                                        fuelType: viewModel.selectedFuelType,
+                                        price: viewModel.price(for: station),
+                                        priceLevel: viewModel.priceLevel(for: station)
+                                    )
+                                }
+                                .task {
+                                    await viewModel.loadPriceAnalysis(for: station)
                                 }
                             }
                         }
@@ -208,6 +199,7 @@ struct StationRow: View {
     let station: FuelStation
     let fuelType: FuelType
     let price: Double?
+    let priceLevel: PriceLevel?
     
     var body: some View {
         GlassCard {
@@ -231,7 +223,16 @@ struct StationRow: View {
                 
                 Spacer()
                 
-                PriceBadge(price: price, fuelType: fuelType)
+                HStack(spacing: 6) {
+                    PriceBadge(price: price, fuelType: fuelType)
+                    if let priceLevel {
+                        Circle()
+                            .fill(priceLevel.color)
+                            .frame(width: 10, height: 10)
+                            .overlay(Circle().stroke(Color.white.opacity(0.6), lineWidth: 1))
+                            .accessibilityLabel(priceLevel.label)
+                    }
+                }
             }
         }
         .padding(.vertical, 4)

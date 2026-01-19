@@ -32,7 +32,11 @@ final class StationsViewModel {
     var stations: [FuelStation] = []
     var state: ViewState = .idle
     var errorMessage: String?
-    var selectedFuelType: FuelType = .gazole
+    var selectedFuelType: FuelType = .gazole {
+        didSet {
+            priceAnalysisCache.removeAll()
+        }
+    }
     var adviceMessage: String?
     var bestDealNearHome: FuelStation?
     var bestDealNearWork: FuelStation?
@@ -42,7 +46,11 @@ final class StationsViewModel {
     private let advisorService: AdvisorService
     private let logger = Logger.refuel
     private var userProfile: UserProfile?
-    private var cachedStations: [FuelStation] = []
+    private var cachedStationsById: [String: FuelStation] = [:]
+    private var cachedRegions: [RegionCache] = []
+    private var debounceTask: Task<Void, Never>?
+    private var priceAnalysisCache: [PriceAnalysisKey: PriceAnalysis] = [:]
+    private var priceAnalysisInFlight: Set<PriceAnalysisKey> = []
 
     init(
         dataService: FuelDataService? = nil,
@@ -75,7 +83,10 @@ final class StationsViewModel {
                 longitude: resolvedLocation.coordinate.longitude,
                 radius: maxRadiusKm
             )
-            cachedStations = fetchedStations
+            setCachedStations(fetchedStations)
+            cachedRegions = [
+                RegionCache(center: resolvedLocation.coordinate, radiusKm: maxRadiusKm)
+            ]
             let fuelType = selectedFuelType
             let radius = maxRadiusKm
             let sortedStations = await Task.detached(priority: .userInitiated) {
@@ -128,7 +139,10 @@ final class StationsViewModel {
                 longitude: searchLocation.coordinate.longitude,
                 radius: maxRadiusKm
             )
-            cachedStations = fetchedStations
+            setCachedStations(fetchedStations)
+            cachedRegions = [
+                RegionCache(center: searchLocation.coordinate, radiusKm: maxRadiusKm)
+            ]
             let fuelType = selectedFuelType
             let radius = maxRadiusKm
             let sortedStations = await Task.detached(priority: .userInitiated) {
@@ -279,6 +293,40 @@ final class StationsViewModel {
         updateAdviceMessage()
     }
 
+    func loadStationsForRegion(lat: Double, lon: Double, radius: Double) {
+        debounceTask?.cancel()
+        let center = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        let radiusKm = max(1.0, radius)
+        debounceTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            await self?.fetchStationsForRegion(center: center, radiusKm: radiusKm)
+        }
+    }
+
+    func loadPriceAnalysis(for station: FuelStation) async {
+        let key = PriceAnalysisKey(stationId: station.id, fuelType: selectedFuelType)
+        if priceAnalysisCache[key] != nil || priceAnalysisInFlight.contains(key) {
+            return
+        }
+        priceAnalysisInFlight.insert(key)
+        defer { priceAnalysisInFlight.remove(key) }
+        do {
+            if let analysis = try await dataService.fetchPriceAnalysis(
+                stationId: station.id,
+                fuelType: selectedFuelType
+            ) {
+                priceAnalysisCache[key] = analysis
+            }
+        } catch {
+            logger.warning("loadPriceAnalysis: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func priceLevel(for station: FuelStation) -> PriceLevel? {
+        let key = PriceAnalysisKey(stationId: station.id, fuelType: selectedFuelType)
+        return priceAnalysisCache[key]?.priceLevel
+    }
+
     private func loadStationsNearHome(using stations: [FuelStation]) async {
         guard let coordinate = userProfile?.homeCoordinate else {
             bestDealNearHome = nil
@@ -332,6 +380,88 @@ final class StationsViewModel {
         let cheapestStation = bestDealNearHome ?? bestDealNearWork ?? stations.first
         adviceMessage = advisorService.advice(profile: profile, cheapestStation: cheapestStation)
     }
+
+    private var cachedStations: [FuelStation] {
+        Array(cachedStationsById.values)
+    }
+
+    private func setCachedStations(_ stations: [FuelStation]) {
+        cachedStationsById = Dictionary(uniqueKeysWithValues: stations.map { ($0.id, $0) })
+    }
+
+    private func cacheStations(_ stations: [FuelStation]) {
+        for station in stations {
+            cachedStationsById[station.id] = station
+        }
+    }
+
+    private func fetchStationsForRegion(center: CLLocationCoordinate2D, radiusKm: Double) async {
+        if isRegionCovered(center: center, radiusKm: radiusKm) {
+            stations = stationsForVisibleRegion(center: center, radiusKm: radiusKm)
+            return
+        }
+
+        state = .loading
+        var finalState: ViewState = .idle
+        defer { state = finalState }
+        do {
+            let fetchedStations = try await dataService.fetchStations(
+                latitude: center.latitude,
+                longitude: center.longitude,
+                radius: radiusKm
+            )
+            cacheStations(fetchedStations)
+            cachedRegions.append(RegionCache(center: center, radiusKm: radiusKm))
+            stations = stationsForVisibleRegion(center: center, radiusKm: radiusKm)
+        } catch let error as FuelError {
+            let message = StationsViewModelError.data(error).localizedDescription
+            errorMessage = message
+            finalState = .error(message)
+        } catch {
+            let message = StationsViewModelError.unexpected(error).localizedDescription
+            errorMessage = message
+            finalState = .error(message)
+        }
+    }
+
+    private func stationsForVisibleRegion(center: CLLocationCoordinate2D, radiusKm: Double) -> [FuelStation] {
+        let location = CLLocation(latitude: center.latitude, longitude: center.longitude)
+        let fuelType = selectedFuelType
+        let stations = cachedStations
+        let stationsWithDistance = stations.map { station -> FuelStation in
+            var mutable = station
+            let stationCoordinate = CLLocationCoordinate2D(
+                latitude: station.latitude,
+                longitude: station.longitude
+            )
+            mutable.distanceKm = LocationManager.distanceKm(from: location.coordinate, to: stationCoordinate)
+            return mutable
+        }
+        let filtered = stationsWithDistance.filter { ($0.distanceKm ?? .greatestFiniteMagnitude) <= radiusKm }
+        if filtered.isEmpty {
+            return stationsWithDistance
+        }
+        return filtered.filter { station in
+            station.prices.contains { $0.fuelType == fuelType }
+        }
+    }
+
+    private func isRegionCovered(center: CLLocationCoordinate2D, radiusKm: Double) -> Bool {
+        cachedRegions.contains { cached in
+            let distance = LocationManager.distanceKm(from: cached.center, to: center)
+            return distance + radiusKm <= cached.radiusKm
+        }
+    }
+}
+
+private struct RegionCache {
+    let center: CLLocationCoordinate2D
+    let radiusKm: Double
+}
+
+private struct PriceAnalysisKey: Hashable {
+    let stationId: String
+    let fuelType: FuelType
 }
 
 #if DEBUG

@@ -47,7 +47,10 @@ final class PersistenceManager {
         lastRefillDate: Date? = nil,
         refillFrequencyDays: Int? = nil,
         homeCoordinate: CLLocationCoordinate2D? = nil,
-        workCoordinate: CLLocationCoordinate2D? = nil
+        workCoordinate: CLLocationCoordinate2D? = nil,
+        homeAddress: String? = nil,
+        workAddress: String? = nil,
+        comparisonRadius: Double = 15.0
     ) -> UserProfile {
         let profile = UserProfile(
             fuelType: fuelType,
@@ -58,11 +61,18 @@ final class PersistenceManager {
             homeLatitude: homeCoordinate?.latitude,
             homeLongitude: homeCoordinate?.longitude,
             workLatitude: workCoordinate?.latitude,
-            workLongitude: workCoordinate?.longitude
+            workLongitude: workCoordinate?.longitude,
+            homeAddress: homeAddress,
+            workAddress: workAddress,
+            comparisonRadius: comparisonRadius
         )
         context.insert(profile)
         save()
         return profile
+    }
+
+    func updateProfile(_ profile: UserProfile) {
+        save()
     }
 
     func save() {

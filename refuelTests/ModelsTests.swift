@@ -36,4 +36,41 @@ final class ModelsTests: XCTestCase {
         XCTAssertEqual(station.cheapestPrice, 1.65)
         XCTAssertEqual(station.coordinate.latitude, 48.0)
     }
+
+    func testPriceAnalysisLevel() {
+        let analysisLow = PriceAnalysis(
+            stationId: "1",
+            fuelType: .gazole,
+            currentPrice: 1.45,
+            avg30Days: 1.50,
+            min30Days: 1.40,
+            max30Days: 1.60,
+            percentile: 15,
+            trend: "decreasing"
+        )
+        let analysisAverage = PriceAnalysis(
+            stationId: "2",
+            fuelType: .gazole,
+            currentPrice: 1.52,
+            avg30Days: 1.50,
+            min30Days: 1.40,
+            max30Days: 1.60,
+            percentile: 55,
+            trend: "stable"
+        )
+        let analysisHigh = PriceAnalysis(
+            stationId: "3",
+            fuelType: .gazole,
+            currentPrice: 1.58,
+            avg30Days: 1.50,
+            min30Days: 1.40,
+            max30Days: 1.60,
+            percentile: 90,
+            trend: "increasing"
+        )
+
+        XCTAssertEqual(analysisLow.priceLevel, .low)
+        XCTAssertEqual(analysisAverage.priceLevel, .average)
+        XCTAssertEqual(analysisHigh.priceLevel, .high)
+    }
 }

@@ -14,6 +14,7 @@ enum FuelError: LocalizedError {
     case networkError(Error)
     case invalidResponse(Int)
     case decodingError(Error)
+    case analysisUnavailable
 
     var errorDescription: String? {
         switch self {
@@ -27,6 +28,8 @@ enum FuelError: LocalizedError {
             return "Unexpected server response (\(statusCode))"
         case .decodingError(let error):
             return "Failed to decode stations: \(error.localizedDescription)"
+        case .analysisUnavailable:
+            return "Price analysis unavailable."
         }
     }
 }
@@ -84,4 +87,53 @@ actor FuelDataService {
             throw FuelError.decodingError(error)
         }
     }
+
+    func fetchPriceAnalysis(stationId: String, fuelType: FuelType) async throws -> PriceAnalysis? {
+        let endpoint = "\(baseURLString)/\(stationId)/price-analysis"
+        guard var components = URLComponents(string: endpoint) else {
+            throw FuelError.invalidURL
+        }
+
+        components.queryItems = [
+            URLQueryItem(name: "fuel_type", value: fuelType.rawValue)
+        ]
+
+        guard let url = components.url else {
+            throw FuelError.invalidURL
+        }
+
+        Logger.network.info("Fetching price analysis: \(url.absoluteString, privacy: .public)")
+
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(from: url)
+        } catch {
+            throw FuelError.networkError(error)
+        }
+
+        if let httpResponse = response as? HTTPURLResponse {
+            if httpResponse.statusCode == 404 {
+                return nil
+            }
+            if !(200...299).contains(httpResponse.statusCode) {
+                throw FuelError.invalidResponse(httpResponse.statusCode)
+            }
+        }
+
+        do {
+            let decoder = JSONDecoder()
+            return try decoder.decode(PriceAnalysis.self, from: data)
+        } catch {
+            if let errorResponse = try? JSONDecoder().decode(PriceAnalysisErrorResponse.self, from: data),
+               !errorResponse.error.isEmpty {
+                return nil
+            }
+            throw FuelError.decodingError(error)
+        }
+    }
+}
+
+private struct PriceAnalysisErrorResponse: Codable {
+    let error: String
 }

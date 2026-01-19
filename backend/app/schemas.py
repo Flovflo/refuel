@@ -26,3 +26,14 @@ class StationResponse(BaseModel):
     prices: list[PriceResponse]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PriceAnalysisResponse(BaseModel):
+    station_id: str
+    fuel_type: FuelType
+    current_price: float
+    avg_30_days: float
+    min_30_days: float
+    max_30_days: float
+    percentile: int
+    trend: str

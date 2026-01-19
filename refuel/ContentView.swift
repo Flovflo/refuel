@@ -26,6 +26,16 @@ struct ContentView: View {
                         .tabItem {
                             Label("Carte", systemImage: "map")
                         }
+
+                    ComparisonView()
+                        .tabItem {
+                            Label("Comparer", systemImage: "arrow.left.arrow.right")
+                        }
+
+                    SettingsView()
+                        .tabItem {
+                            Label("Profil", systemImage: "person.crop.circle")
+                        }
                 }
             }
         }
