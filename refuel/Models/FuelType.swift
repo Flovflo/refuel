@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum FuelType: String, CaseIterable, Codable, Identifiable {
+enum FuelType: String, CaseIterable, Codable, Identifiable, Sendable {
     case gazole = "Gazole"
     case sp95 = "SP95"
     case sp98 = "SP98"

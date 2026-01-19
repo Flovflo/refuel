@@ -22,7 +22,7 @@ final class UserProfile {
     var workLongitude: Double?
     var homeAddress: String?
     var workAddress: String?
-    var comparisonRadius: Double
+    var comparisonRadius: Double = 15.0
     @Relationship(deleteRule: .cascade, inverse: \RefillEntry.profile) var refills: [RefillEntry]
 
     init(

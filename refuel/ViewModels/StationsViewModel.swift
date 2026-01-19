@@ -222,7 +222,7 @@ final class StationsViewModel {
     }
 
     /// Maximum search radius in kilometers
-    private let maxRadiusKm: Double = 5.0
+    private let maxRadiusKm: Double = 15.0
 
     nonisolated static func processStations(
         _ stations: [FuelStation],

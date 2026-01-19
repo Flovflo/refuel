@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PriceAnalysis: Codable, Identifiable {
+struct PriceAnalysis: Codable, Identifiable, Sendable {
     let stationId: String
     let fuelType: FuelType
     let currentPrice: Double

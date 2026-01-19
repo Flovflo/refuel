@@ -134,6 +134,6 @@ actor FuelDataService {
     }
 }
 
-private struct PriceAnalysisErrorResponse: Codable {
+private struct PriceAnalysisErrorResponse: Codable, Sendable {
     let error: String
 }

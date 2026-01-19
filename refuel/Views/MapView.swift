@@ -168,19 +168,25 @@ private struct StationMapRepresentable: UIViewRepresentable {
                 return nil
             }
 
-            let view = mapView.dequeueReusableAnnotationView(
-                withIdentifier: StationAnnotationView.reuseIdentifier,
-                for: annotation
-            )
-            view.annotation = stationAnnotation
-            view.canShowCallout = false
+            let view: MKMarkerAnnotationView
+            if let dequeuedView = mapView.dequeueReusableAnnotationView(
+                withIdentifier: StationAnnotationView.reuseIdentifier
+            ) as? MKMarkerAnnotationView {
+                dequeuedView.annotation = stationAnnotation
+                view = dequeuedView
+            } else {
+                view = MKMarkerAnnotationView(annotation: stationAnnotation, reuseIdentifier: StationAnnotationView.reuseIdentifier)
+            }
+            view.canShowCallout = true
 
             let price = priceProvider(stationAnnotation.station)
-            view.contentConfiguration = UIHostingConfiguration {
-                PriceBadge(price: price, fuelType: fuelType)
-                    .shadow(radius: 2)
+            if let price = price {
+                view.glyphText = String(format: "%.2f", price)
+                view.markerTintColor = price < 1.5 ? .systemGreen : (price < 1.8 ? .systemOrange : .systemRed)
+            } else {
+                view.glyphText = "?"
+                view.markerTintColor = .systemGray
             }
-            view.backgroundColor = .clear
             return view
         }
 
