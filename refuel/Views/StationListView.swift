@@ -32,11 +32,97 @@ struct StationListView: View {
                     ContentUnavailableView("Erreur", systemImage: "exclamationmark.triangle", description: Text(message))
                 case .idle:
                     List {
+                        // 🔥 BEST DEAL - Highlighted cheapest station
+                        if let cheapest = viewModel.stations.first {
+                            Section {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Image(systemName: "star.fill")
+                                            .foregroundStyle(.yellow)
+                                        Text("Meilleure Offre")
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+                                        Spacer()
+                                        if let price = viewModel.price(for: cheapest) {
+                                            Text(String(format: "%.3f €/L", price))
+                                                .font(.title2.bold())
+                                                .foregroundStyle(.green)
+                                        }
+                                    }
+                                    
+                                    NavigationLink(value: cheapest) {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(cheapest.city ?? "Station")
+                                                    .font(.subheadline.bold())
+                                                Text(cheapest.address ?? "")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            if let distance = cheapest.distanceKm {
+                                                Text(String(format: "%.1f km", distance))
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Image(systemName: "chevron.right")
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding(.vertical, 4)
+                            }
+                            .listRowBackground(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.green.opacity(0.1))
+                            )
+                        }
+                        
+                        // 🏠🏢 Home vs Work comparison if both are set
+                        if let home = viewModel.bestDealNearHome,
+                           let work = viewModel.bestDealNearWork {
+                            Section("Où faire le plein?") {
+                                HStack(spacing: 16) {
+                                    // Home card
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "house.fill")
+                                            .font(.title2)
+                                        Text("Maison")
+                                            .font(.caption.bold())
+                                        if let price = viewModel.price(for: home) {
+                                            Text(String(format: "%.3f€", price))
+                                                .font(.headline)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                                    
+                                    // Work card
+                                    VStack(spacing: 4) {
+                                        Image(systemName: "briefcase.fill")
+                                            .font(.title2)
+                                        Text("Travail")
+                                            .font(.caption.bold())
+                                        if let price = viewModel.price(for: work) {
+                                            Text(String(format: "%.3f€", price))
+                                                .font(.headline)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(Color.purple.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                                }
+                            }
+                        }
+                        
                         // Advice section
                         if let message = viewModel.adviceMessage {
                             Section {
-                                Label(message, systemImage: "sparkles")
+                                Label(message, systemImage: "lightbulb.fill")
                                     .font(.subheadline)
+                                    .foregroundStyle(.orange)
                             }
                         }
                         
@@ -51,7 +137,7 @@ struct StationListView: View {
                         }
                         
                         // Stations list
-                        Section("Stations à proximité (\(viewModel.stations.count))") {
+                        Section("Toutes les stations (\\(viewModel.stations.count))") {
                             ForEach(viewModel.stations) { station in
                                 NavigationLink(value: station) {
                                     StationRow(

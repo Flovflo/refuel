@@ -209,28 +209,64 @@ struct PriceTrendChart: View {
     let analysis: PriceAnalysis
 
     var body: some View {
-        GeometryReader { proxy in
-            let width = proxy.size.width
-            let range = max(analysis.max30Days - analysis.min30Days, 0.001)
-            let currentRatio = (analysis.currentPrice - analysis.min30Days) / range
-            let currentX = max(0, min(width, width * currentRatio))
+        VStack(alignment: .leading, spacing: 8) {
+            // Price range bar (simple visualization)
+            GeometryReader { proxy in
+                let width = proxy.size.width
+                let range = max(analysis.max30Days - analysis.min30Days, 0.001)
+                let currentRatio = (analysis.currentPrice - analysis.min30Days) / range
+                let avgRatio = (analysis.avg30Days - analysis.min30Days) / range
+                let currentX = max(0, min(width, width * currentRatio))
+                let avgX = max(0, min(width, width * avgRatio))
 
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.white.opacity(0.2))
-                    .frame(height: 6)
+                ZStack(alignment: .leading) {
+                    // Background gradient bar
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [.green, .yellow, .orange, .red],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(height: 8)
+                        .opacity(0.3)
 
-                Capsule()
-                    .fill(analysis.priceLevel.color)
-                    .frame(width: max(10, currentX), height: 6)
+                    // Average marker
+                    Rectangle()
+                        .fill(.orange)
+                        .frame(width: 2, height: 16)
+                        .offset(x: avgX - 1)
 
-                Circle()
-                    .fill(analysis.priceLevel.color)
-                    .frame(width: 12, height: 12)
-                    .offset(x: currentX - 6)
+                    // Current price marker
+                    Circle()
+                        .fill(analysis.priceLevel.color)
+                        .frame(width: 14, height: 14)
+                        .shadow(radius: 2)
+                        .offset(x: currentX - 7)
+                }
+            }
+            .frame(height: 20)
+
+            // Legend
+            HStack(spacing: 16) {
+                HStack(spacing: 4) {
+                    Circle().fill(analysis.priceLevel.color).frame(width: 8, height: 8)
+                    Text(String(format: "%.3f€", analysis.currentPrice))
+                        .font(.caption2)
+                }
+                HStack(spacing: 4) {
+                    Rectangle().fill(.orange).frame(width: 8, height: 2)
+                    Text(String(format: "Moy: %.3f€", analysis.avg30Days))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(String(format: "%.3f - %.3f€", analysis.min30Days, analysis.max30Days))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
         }
-        .frame(height: 16)
     }
 }
 

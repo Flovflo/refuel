@@ -209,3 +209,39 @@ async def get_price_analysis(
         "percentile": percentile,
         "trend": trend,
     }
+
+
+@router.get("/stations/{station_id}/price-history")
+async def get_price_history(
+    station_id: str,
+    fuel_type: FuelType = FuelType.GAZOLE,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    """Get 30 days of price history for charting."""
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    history_stmt = (
+        select(PriceHistory)
+        .where(
+            PriceHistory.station_id == station_id,
+            PriceHistory.fuel_type == fuel_type,
+            PriceHistory.update_date >= thirty_days_ago,
+        )
+        .order_by(PriceHistory.update_date.asc())
+    )
+    history_result = await session.execute(history_stmt)
+    history_entries = history_result.scalars().all()
+
+    history = [
+        {
+            "date": entry.update_date.strftime("%Y-%m-%d"),
+            "price": float(entry.price),
+        }
+        for entry in history_entries
+    ]
+
+    return {
+        "station_id": station_id,
+        "fuel_type": fuel_type.value,
+        "history": history,
+    }
+
